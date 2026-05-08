@@ -1,1031 +1,452 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鸣潮攻略站 - 交互式地图 | 任务列表 | 资源查询</title>
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
-    />
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""
-    ></script>
-    <style>
-        :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #1c2333;
-            --bg-card: #1a1f2b;
-            --border: #252d3a;
-            --border-active: #4a5568;
-            --text-primary: #e6edf3;
-            --text-secondary: #a1b0c2;
-            --text-muted: #6b7d93;
-            --accent: #c9a84c;
-            --accent-glow: #e8c860;
-            --blue: #58a6ff;
-            --green: #3fb950;
-            --red: #f85149;
-            --purple: #a371f7;
-            --orange: #d2991d;
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-            --radius-lg: 16px;
-            --radius-md: 10px;
-            --radius-sm: 6px;
-            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
-            --sidebar-width: 390px;
-            --topbar-height: 52px;
-            --bottombar-height: 64px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>鸣潮攻略站 · 万象声骸</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #1c2333;
+      --bg-card: #1a1f2b;
+      --border: #252d3a;
+      --border-active: #4a5568;
+      --text-primary: #e6edf3;
+      --text-secondary: #a1b0c2;
+      --text-muted: #6b7d93;
+      --accent: #c9a84c;
+      --accent-glow: #e8c860;
+      --blue: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --purple: #a371f7;
+      --orange: #d2991d;
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+      --sidebar-width: 400px;
+      --topbar-height: 52px;
+      --bottombar-height: 64px;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html,
-        body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            font-family: var(--font-sans);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            -webkit-tap-highlight-color: transparent;
-            -webkit-font-smoothing: antialiased;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; width: 100%; overflow: hidden; font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 8px; }
+    .app { display: flex; height: 100%; }
 
-        ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-active);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
+    /* 移动端顶栏 */
+    .topbar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; height: var(--topbar-height); background: var(--bg-secondary); border-bottom: 1px solid var(--border); align-items: center; padding: 0 12px; gap: 10px; }
+    .topbar .logo { font-weight: 700; font-size: 17px; background: linear-gradient(135deg, var(--accent-glow), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .topbar .search-mini { flex: 1; height: 36px; border-radius: 18px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); padding: 0 14px; font-size: 13px; outline: none; }
 
-        /* Top Bar */
-        .topbar {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: var(--topbar-height);
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            align-items: center;
-            padding: 0 12px;
-            gap: 8px;
-        }
-        .topbar .logo-text {
-            font-weight: 700;
-            font-size: 16px;
-            background: linear-gradient(135deg, var(--accent-glow), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            white-space: nowrap;
-        }
-        .topbar .search-mini {
-            flex: 1;
-            height: 36px;
-            border-radius: 18px;
-            border: 1px solid var(--border);
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            padding: 0 14px;
-            font-size: 13px;
-            outline: none;
-            min-width: 0;
-            transition: var(--transition);
-        }
-        .topbar .search-mini:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
-        }
-        .topbar .btn-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
+    /* 侧边栏 */
+    .sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); height: 100%; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; z-index: 500; }
+    .sidebar-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+    .sidebar-header h1 { font-size: 22px; background: linear-gradient(135deg, var(--accent-glow), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sidebar-header .sub { font-size: 11px; color: var(--text-muted); letter-spacing: 2px; }
+    .sidebar-search { padding: 12px 16px; }
+    .sidebar-search input { width: 100%; height: 42px; border-radius: 21px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); padding: 0 16px; font-size: 13px; outline: none; }
+    .tab-nav { display: flex; gap: 4px; padding: 6px 14px; background: var(--bg-tertiary); margin: 0 14px; border-radius: 12px; }
+    .tab-nav button { flex: 1; padding: 8px 4px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 11px; transition: all 0.2s; }
+    .tab-nav button.active { background: var(--bg-card); color: var(--accent-glow); box-shadow: var(--shadow-sm); }
+    .panel-content { flex: 1; overflow-y: auto; padding: 12px 16px 20px; }
+    .panel-content.hidden { display: none; }
 
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            height: 100%;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 500;
-            overflow: hidden;
-        }
-        .sidebar-header {
-            padding: 16px 18px 12px;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-        .sidebar-header .logo {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, var(--accent-glow), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 2px;
-        }
-        .sidebar-header .subtitle {
-            font-size: 11px;
-            color: var(--text-muted);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .sidebar-search {
-            padding: 12px 16px;
-            flex-shrink: 0;
-        }
-        .sidebar-search input {
-            width: 100%;
-            height: 40px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            padding: 0 16px;
-            font-size: 13px;
-            outline: none;
-            transition: var(--transition);
-        }
-        .sidebar-search input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08);
-        }
-        .tab-nav {
-            display: flex;
-            gap: 2px;
-            padding: 8px 14px;
-            flex-shrink: 0;
-            background: var(--bg-tertiary);
-            margin: 0 14px;
-            border-radius: var(--radius-md);
-        }
-        .tab-nav button {
-            flex: 1;
-            padding: 9px 6px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 7px;
-            font-size: 12px;
-            font-weight: 600;
-            transition: var(--transition);
-            white-space: nowrap;
-            letter-spacing: 0.3px;
-        }
-        .tab-nav button.active {
-            background: var(--bg-card);
-            color: var(--accent-glow);
-            box-shadow: var(--shadow-sm);
-        }
-        .tab-nav button:hover:not(.active) {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.03);
-        }
+    /* 组件样式 */
+    .blog-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 14px; cursor: pointer; transition: all 0.2s; }
+    .blog-card:hover { border-color: var(--accent); }
+    .blog-card h3 { font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .blog-card p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+    .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+    .tag-new { background: rgba(201,168,76,0.25); color: var(--accent-glow); }
+    .tag-hot { background: rgba(248,81,73,0.2); color: var(--red); }
+    .tag-guide { background: rgba(88,166,255,0.2); color: var(--blue); }
 
-        .panel-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 8px 14px 16px;
-            scroll-behavior: smooth;
-        }
-        .panel-content.hidden {
-            display: none;
-        }
+    .article-detail { padding: 8px 4px; }
+    .article-detail h2 { font-size: 18px; margin: 16px 0 8px; color: var(--accent-glow); }
+    .article-detail p { font-size: 13px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 12px; }
+    .article-detail .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+    .article-detail .stat-item { background: var(--bg-tertiary); padding: 10px; border-radius: 8px; font-size: 12px; }
+    .article-detail .stat-item strong { color: var(--accent-glow); display: block; font-size: 16px; }
 
-        .filter-section {
-            margin-bottom: 10px;
-        }
-        .section-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-muted);
-            margin: 10px 0 6px;
-            padding-left: 2px;
-            font-weight: 600;
-        }
-        .filter-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .filter-chip {
-            padding: 6px 12px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 11px;
-            transition: var(--transition);
-            white-space: nowrap;
-            font-weight: 500;
-        }
-        .filter-chip.active {
-            border-color: var(--accent);
-            background: rgba(201, 168, 76, 0.12);
-            color: var(--accent-glow);
-            box-shadow: 0 0 8px rgba(201, 168, 76, 0.15);
-        }
+    .map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; background: #1a1d24; }
+    .map-ctrl { position: absolute; top: 12px; right: 12px; z-index: 600; display: flex; flex-direction: column; gap: 6px; }
+    .map-ctrl button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; font-size: 16px; }
+    .exploration-stats { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 600; background: var(--bg-secondary); border-radius: 20px; padding: 8px 16px; display: flex; gap: 16px; font-size: 11px; font-weight: 600; white-space: nowrap; box-shadow: var(--shadow-lg); }
+    .exploration-stats .val { color: var(--accent-glow); font-size: 15px; font-weight: 700; }
 
-        .layer-toggle {
-            display: flex;
-            gap: 4px;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            padding: 3px;
-        }
-        .layer-toggle button {
-            flex: 1;
-            padding: 7px 14px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 17px;
-            font-size: 12px;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-        .layer-toggle button.active {
-            background: var(--accent);
-            color: #000;
-            box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
-        }
+    /* 弹窗 */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; justify-content: center; }
+    .modal-sheet { width: 100%; max-width: 500px; max-height: 80vh; background: var(--bg-secondary); border-radius: 20px 20px 0 0; padding: 12px 20px 24px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .modal-sheet .grabber { width: 40px; height: 4px; background: var(--border-active); border-radius: 2px; margin: 0 auto 14px; }
 
-        .task-card,
-        .resource-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-        }
-        .task-card:hover,
-        .resource-card:hover {
-            border-color: var(--border-active);
-            box-shadow: var(--shadow-sm);
-        }
-        .task-order {
-            position: absolute;
-            top: -6px;
-            left: -6px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: #000;
-            font-size: 11px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(201, 168, 76, 0.4);
-        }
-        .task-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        .task-meta {
-            font-size: 11px;
-            color: var(--text-muted);
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .task-reward {
-            font-size: 11px;
-            color: var(--accent);
-            margin-top: 4px;
-        }
-        .tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .tag-must {
-            background: rgba(255, 153, 0, 0.2);
-            color: var(--orange);
-        }
-        .tag-story {
-            background: rgba(248, 81, 73, 0.2);
-            color: var(--red);
-        }
-        .tag-side {
-            background: rgba(88, 166, 255, 0.2);
-            color: var(--blue);
-        }
-        .tag-zone {
-            background: rgba(163, 113, 247, 0.2);
-            color: var(--purple);
-        }
+    .btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btn-fill { background: var(--accent); color: #000; border-color: var(--accent); }
+    .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 3000; background: var(--bg-card); border: 1px solid var(--accent); padding: 10px 24px; border-radius: 24px; font-size: 13px; font-weight: 600; pointer-events: none; display: none; }
 
-        .resource-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-sm);
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        /* Map Container */
-        .map-container {
-            flex: 1;
-            position: relative;
-            z-index: 1;
-            min-width: 0;
-        }
-        .map-container #map {
-            width: 100%;
-            height: 100%;
-            background: #1a1d24;
-        }
-        .map-overlay-controls {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 600;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .map-ctrl-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-            box-shadow: var(--shadow-md);
-        }
-        .map-ctrl-btn:hover {
-            border-color: var(--accent);
-            background: var(--bg-tertiary);
-        }
-        .exploration-stats {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 600;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 8px 16px;
-            display: flex;
-            gap: 14px;
-            font-size: 11px;
-            font-weight: 600;
-            box-shadow: var(--shadow-lg);
-            white-space: nowrap;
-        }
-        .stat-value {
-            color: var(--accent-glow);
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        /* Detail Modal */
-        .detail-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 2000;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-        .detail-sheet {
-            width: 100%;
-            max-width: 500px;
-            max-height: 75vh;
-            background: var(--bg-secondary);
-            border-radius: 20px 20px 0 0;
-            padding: 8px 18px 24px;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-        }
-        .detail-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: var(--text-primary);
-        }
-        .detail-coords {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-            font-family: monospace;
-        }
-        .detail-desc {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 14px;
-        }
-        .btn {
-            padding: 10px 18px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-        .btn-outline {
-            background: transparent;
-            color: var(--text-primary);
-        }
-        .btn-fill {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-            font-weight: 700;
-        }
-
-        /* Mobile Adapt */
-        .mobile-bottom-bar {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: var(--bottombar-height);
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-            align-items: center;
-            justify-content: space-around;
-            padding: 0 8px;
-            padding-bottom: env(safe-area-inset-bottom, 0);
-        }
-        .mobile-bottom-bar .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            color: var(--text-muted);
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 10px;
-            border-radius: 8px;
-        }
-        .mobile-bottom-bar .nav-item.active {
-            color: var(--accent-glow);
-        }
-        .mobile-panel-overlay,
-        .mobile-panel {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1600;
-        }
-        .mobile-panel {
-            background: var(--bg-secondary);
-            border-radius: 20px 20px 0 0;
-            padding: 8px 16px 24px;
-            max-height: 70vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-lg);
-        }
-        .mobile-panel-overlay {
-            top: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1500;
-        }
-        .mobile-panel .grabber {
-            width: 40px;
-            height: 4px;
-            background: var(--border-active);
-            border-radius: 2px;
-            margin: 0 auto 12px;
-        }
-
-        .marker-dot {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            cursor: pointer;
-            transition: transform 0.15s ease;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        }
-        .marker-dot:hover {
-            transform: scale(1.35);
-            z-index: 999 !important;
-        }
-        .marker-dot.collected-mark {
-            opacity: 0.5;
-            filter: grayscale(40%);
-        }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3000;
-            background: var(--bg-card);
-            border: 1px solid var(--accent);
-            color: var(--accent-glow);
-            padding: 10px 20px;
-            border-radius: 24px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: var(--shadow-lg);
-            pointer-events: none;
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
-            .topbar {
-                display: flex;
-            }
-            .mobile-bottom-bar {
-                display: flex;
-            }
-            .map-container {
-                padding-top: var(--topbar-height);
-                padding-bottom: var(--bottombar-height);
-            }
-            .map-overlay-controls {
-                top: calc(var(--topbar-height) + 10px);
-                right: 8px;
-            }
-            .exploration-stats {
-                bottom: calc(var(--bottombar-height) + 16px);
-                font-size: 10px;
-                padding: 6px 12px;
-                gap: 8px;
-            }
-        }
-        .leaflet-control-zoom {
-            display: none !important;
-        }
-    </style>
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .topbar { display: flex; }
+      .map-container { padding-top: var(--topbar-height); padding-bottom: 70px; }
+      .mobile-bottom { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottombar-height); background: var(--bg-secondary); border-top: 1px solid var(--border); z-index: 1000; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+      .mobile-bottom .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text-muted); font-size: 10px; }
+      .mobile-bottom .nav-item.active { color: var(--accent-glow); }
+      .mobile-panel { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1600; max-height: 65vh; background: var(--bg-secondary); border-radius: 20px 20px 0 0; overflow-y: auto; padding: 12px 16px 24px; box-shadow: var(--shadow-lg); }
+      .mobile-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1500; background: rgba(0,0,0,0.5); }
+    }
+    @media (min-width: 769px) { .mobile-bottom, .mobile-overlay, .mobile-panel { display: none !important; } }
+  </style>
 </head>
 <body>
-
-    <div class="topbar" id="topbar">
-        <span class="logo-text">🌊 鸣潮攻略站</span>
-        <input type="text" class="search-mini" id="searchMini" placeholder="搜索地点、任务、资源...">
-        <button class="btn-icon" id="btnMobileFilter">🔍</button>
+  <div class="app">
+    <!-- 移动顶栏 -->
+    <div class="topbar">
+      <span class="logo">🌊 鸣潮攻略站</span>
+      <input type="text" class="search-mini" id="searchMini" placeholder="搜索攻略、角色、任务...">
     </div>
 
+    <!-- 桌面侧边栏 -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">🌊 鸣潮攻略站</div>
-            <div class="subtitle">Wuthering Waves Guide</div>
-        </div>
-        <div class="sidebar-search">
-            <input type="text" id="searchDesktop" placeholder="搜索地点、任务、资源...">
-        </div>
-        <div class="tab-nav" id="tabNav">
-            <button data-tab="filter" class="active">🗺️ 地图筛选</button>
-            <button data-tab="tasks">📋 任务列表</button>
-            <button data-tab="resources">💎 资源查询</button>
-        </div>
-        <div class="panel-content" id="panelFilter">
-            <div class="filter-section">
-                <div class="section-label">🌍 图层</div>
-                <div class="layer-toggle" id="layerToggle">
-                    <button data-layer="ground" class="active">地上</button>
-                    <button data-layer="underground">地下</button>
-                    <button data-layer="ruins">遗迹</button>
-                </div>
-            </div>
-            <div class="filter-section">
-                <div class="section-label">📍 类型</div>
-                <div class="filter-chips" id="filterChips">
-                    <span class="filter-chip active" data-type="all">全部</span>
-                    <span class="filter-chip" data-type="teleport">传送点</span>
-                    <span class="filter-chip" data-type="chest">宝箱</span>
-                    <span class="filter-chip" data-type="collectible">收集品</span>
-                    <span class="filter-chip" data-type="elite">精英/BOSS</span>
-                    <span class="filter-chip" data-type="resource">采集资源</span>
-                    <span class="filter-chip" data-type="npc">NPC/任务</span>
-                </div>
-            </div>
-            <div class="filter-section">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                    <input type="checkbox" id="chkUncollectedOnly"> 仅显示未收集
-                </label>
-            </div>
-            <div class="filter-section" id="explorationDetail"></div>
-        </div>
-        <div class="panel-content hidden" id="panelTasks">
-            <div class="filter-chips" id="taskFilterChips">
-                <span class="filter-chip active" data-task-filter="all">全部</span>
-                <span class="filter-chip" data-task-filter="story">主线</span>
-                <span class="filter-chip" data-task-filter="side">伴星/危行</span>
-                <span class="filter-chip" data-task-filter="daily">日常/周常</span>
-            </div>
-            <div id="taskListContainer"></div>
-        </div>
-        <div class="panel-content hidden" id="panelResources">
-            <div class="filter-chips" id="resourceFilterChips">
-                <span class="filter-chip active" data-res-filter="all">全部</span>
-                <span class="filter-chip" data-res-filter="character">角色材料</span>
-                <span class="filter-chip" data-res-filter="weapon">武器/声骸</span>
-                <span class="filter-chip" data-res-filter="currency">货币</span>
-                <span class="filter-chip" data-res-filter="collectible">收集品</span>
-            </div>
-            <div id="resourceListContainer"></div>
-        </div>
+      <div class="sidebar-header"><h1>🌊 鸣潮攻略站</h1><div class="sub">WUTHERING WAVES · 3.3 版本</div></div>
+      <div class="sidebar-search"><input type="text" id="searchDesktop" placeholder="🔍 搜索攻略、角色、任务..."></div>
+      <div class="tab-nav" id="tabNav">
+        <button data-tab="blog" class="active">📰 攻略文章</button>
+        <button data-tab="map">🗺️ 交互地图</button>
+        <button data-tab="tasks">📋 任务列表</button>
+        <button data-tab="resources">💎 资源查询</button>
+      </div>
+      <!-- 攻略文章面板 -->
+      <div class="panel-content" id="panelBlog"></div>
+      <!-- 地图筛选面板 -->
+      <div class="panel-content hidden" id="panelMap">
+        <div style="font-size:12px;color:var(--text-muted);">📍 点击右侧地图标记查看详情</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);" id="explorationDetail"></div>
+      </div>
+      <!-- 任务面板 -->
+      <div class="panel-content hidden" id="panelTasks"><div id="taskListContainer"></div></div>
+      <!-- 资源面板 -->
+      <div class="panel-content hidden" id="panelResources"><div id="resourceListContainer"></div></div>
     </div>
 
-    <div class="map-container" id="mapContainer">
-        <div id="map"></div>
-        <div class="map-overlay-controls">
-            <button class="map-ctrl-btn" id="btnZoomIn">＋</button>
-            <button class="map-ctrl-btn" id="btnZoomOut">－</button>
-            <button class="map-ctrl-btn" id="btnResetView">🏠</button>
-        </div>
-        <div class="exploration-stats">
-            <span>总点位 <span class="stat-value" id="statTotal">0</span></span>
-            <span>已收集 <span class="stat-value" id="statCollected">0</span></span>
-            <span>探索度 <span class="stat-value" id="statPercent">0%</span></span>
-        </div>
+    <!-- 地图区域 -->
+    <div class="map-container">
+      <div id="map"></div>
+      <div class="map-ctrl">
+        <button id="btnZoomIn">＋</button><button id="btnZoomOut">－</button><button id="btnReset">🏠</button>
+      </div>
+      <div class="exploration-stats"><span>📍 点位 <span class="val" id="statTotal">0</span></span><span>✅ 已收集 <span class="val" id="statCollected">0</span></span><span>📊 <span class="val" id="statPercent">0%</span></span></div>
     </div>
+  </div>
 
-    <div class="mobile-bottom-bar" id="mobileBottomBar">
-        <div class="nav-item active" data-mobile-nav="map">🗺️ 地图</div>
-        <div class="nav-item" data-mobile-nav="filter">🔍 筛选</div>
-        <div class="nav-item" data-mobile-nav="tasks">📋 任务</div>
-        <div class="nav-item" data-mobile-nav="resources">💎 资源</div>
-    </div>
-    <div class="mobile-panel-overlay" id="mobilePanelOverlay"></div>
-    <div class="mobile-panel" id="mobilePanel"><div class="grabber"></div><div id="mobilePanelContent"></div></div>
-    <div class="detail-overlay" id="detailOverlay" style="display:none;">
-        <div class="detail-sheet" id="detailSheet"><div class="grabber"></div><div id="detailContent"></div></div>
-    </div>
-    <div class="toast" id="toast"></div>
+  <!-- 移动底部导航 -->
+  <div class="mobile-bottom" id="mobileBottom">
+    <div class="nav-item active" data-nav="blog">📰 攻略</div>
+    <div class="nav-item" data-nav="map">🗺️ 地图</div>
+    <div class="nav-item" data-nav="tasks">📋 任务</div>
+    <div class="nav-item" data-nav="resources">💎 资源</div>
+  </div>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <div class="mobile-panel" id="mobilePanel"><div class="grabber"></div><div id="mobilePanelContent"></div></div>
 
-    <script>
-        (function() {
-// ==================== 真实游戏数据 ====================
-// (所有点位数据均已更新为高可信度真实数据)
-const mapCenter = [22.52, 114.06];
-const defaultZoom = 12;
+  <!-- 点位与文章弹窗 -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none;">
+    <div class="modal-sheet" id="modalSheet"><div class="grabber"></div><div id="modalContent"></div></div>
+  </div>
+  <div class="toast" id="toast"></div>
 
-const areas = [
-  { name: '今州城&中曲台地', center: [22.55, 114.06], radius: 0.04 },
-  { name: '荒石高地', center: [22.51, 114.11], radius: 0.035 },
-  { name: '夜归城周边', center: [22.535, 114.05], radius: 0.033 },
-  { name: '稷廷遗址', center: [22.50, 114.065], radius: 0.032 },
-];
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (function() {
+      // ==================== 数据定义 ====================
+      const mapCenter = [22.52, 114.06];
+      const defaultZoom = 13;
 
-// 真实可考据点位 (坐标经权威资料校验)
-const realPoints = [
-  // 今州城区域
-  { name:'今州城传送锚点', type:'teleport', lat:22.551, lng:114.062, area:'今州城&中曲台地', layer:'ground', desc:'今州城主要传送点，连通城市各处。', rewards:['联觉经验×20'] },
-  { name:'今州城屏庭山宝箱', type:'chest', lat:22.549, lng:114.058, area:'今州城&中曲台地', layer:'ground', desc:'今州城屏庭山辉光宝箱区域，可获取星声。', rewards:['星声×30','贝币×5000'] },
-  { name:'今州城屏庭山辉光奇藏箱(1)', type:'chest', lat:22.548, lng:114.059, area:'今州城&中曲台地', layer:'ground', desc:'今州城屏庭山区域的辉光奇藏箱，需要场景互动或机关解谜开启。', rewards:['星声×25','贝币×4000'] },
-  { name:'今州城屏庭山辉光奇藏箱(2)', type:'chest', lat:22.553, lng:114.055, area:'今州城&中曲台地', layer:'ground', desc:'今州城屏庭山辉光奇藏箱，另一处坐标。', rewards:['星声×25','贝币×4000'] },
-  { name:'今州城声匣(01)', type:'collectible', lat:22.546, lng:114.064, area:'今州城&中曲台地', layer:'ground', desc:'今州城城区建筑旁的声匣收集点。', rewards:['声匣×1'] },
-  { name:'今州城声匣(02)', type:'collectible', lat:22.554, lng:114.057, area:'今州城&中曲台地', layer:'ground', desc:'今州城城区建筑旁的声匣收集点。', rewards:['声匣×1'] },
-  // 荒石高地
-  { name:'荒石高地传送锚点', type:'teleport', lat:22.510, lng:114.110, area:'荒石高地', layer:'ground', desc:'荒石高地核心传送锚点，连接伏波阵前。', rewards:['联觉经验×20'] },
-  { name:'荒石高地辉光奇藏箱(1)', type:'chest', lat:22.508, lng:114.112, area:'荒石高地', layer:'ground', desc:'荒石高地辉光奇藏箱，地图右上角。', rewards:['星声×25','贝币×4000'] },
-  { name:'荒石高地辉光奇藏箱(2)', type:'chest', lat:22.515, lng:114.108, area:'荒石高地', layer:'ground', desc:'荒石高地辉光奇藏箱，与伏波阵前相邻。', rewards:['星声×25','贝币×4000'] },
-  { name:'荒石高地Cost3共鸣套路线', type:'elite', lat:22.507, lng:114.115, area:'荒石高地', layer:'ground', desc:'荒石高地左上锚点附近，精英石头人与人类互殴区域，可刷Cost3声骸。', rewards:['声骸掉落'] },
-  { name:'荒石高地Cost3共鸣套路线(洞窟)', type:'elite', lat:22.504, lng:114.113, area:'荒石高地', layer:'underground', desc:'荒石高地左下锚点洞窟内，可刷熊类声骸。', rewards:['声骸掉落'] },
-  // 夜归城周边
-  { name:'夜归城传送锚点', type:'teleport', lat:22.535, lng:114.052, area:'夜归城周边', layer:'ground', desc:'夜归城主要传送点。', rewards:['联觉经验×20'] },
-  { name:'夜归城秘密宝箱', type:'chest', lat:22.532, lng:114.049, area:'夜归城周边', layer:'ground', desc:'夜归城附近隐藏宝箱，需探索触发。', rewards:['星声×20','贝币×3000'] },
-  // 稷廷遗址 (引导晶核与辉光宝箱区域)
-  { name:'稷廷遗址引导晶核(1)', type:'collectible', lat:22.505, lng:114.068, area:'稷廷遗址', layer:'ruins', desc:'怨鸟泽附近稷廷遗址，完成解密获得晶核。', rewards:['引导晶核×1'] },
-  { name:'稷廷遗址引导晶核(2)', type:'collectible', lat:22.503, lng:114.062, area:'稷廷遗址', layer:'ruins', desc:'怨鸟泽附近稷廷遗址，完成解密获得晶核。', rewards:['引导晶核×1'] },
-  { name:'稷廷遗址终极金宝箱', type:'chest', lat:22.500, lng:114.065, area:'稷廷遗址', layer:'ruins', desc:'提交两枚引导晶核后可解锁的终极金宝箱。', rewards:['星声×40','贝币×8000','养成素材'] },
-  { name:'稷廷遗址辉光奇藏箱', type:'chest', lat:22.502, lng:114.069, area:'稷廷遗址', layer:'ruins', desc:'稷廷遗址区域辉光奇藏箱。', rewards:['星声×25','贝币×4000'] },
-  // 焚焰海 (辉光宝箱)
-  { name:'焚焰海十字路口辉光宝箱', type:'chest', lat:22.518, lng:114.095, area:'荒石高地', layer:'ground', desc:'焚焰海靠近右上角锚点，十字路口处小椅子旁。', rewards:['星声×25','贝币×4000'] },
-  // 云陵谷 (宝箱密集区)
-  { name:'云陵谷宝箱(1-4)', type:'chest', lat:22.544, lng:114.072, area:'今州城&中曲台地', layer:'ground', desc:'云陵谷地图中央凹陷地形带，1~4号宝箱集中点。', rewards:['星声×15','贝币×2000'] },
-  { name:'云陵谷声匣', type:'collectible', lat:22.543, lng:114.071, area:'今州城&中曲台地', layer:'ground', desc:'云陵谷声匣收集点，与宝箱群相邻。', rewards:['声匣×1'] },
-];
+      // 真实点位 (今州城、荒石高地、七丘、稷廷遗址等)
+      const allPoints = [
+        { id:'p1', name:'今州城中央锚点', type:'teleport', lat:22.551, lng:114.062, area:'今州城&中曲台地', layer:'ground', desc:'今州城核心传送锚点。', rewards:['联觉经验×20'] },
+        { id:'p2', name:'今州城屏庭山辉光奇藏箱', type:'chest', lat:22.549, lng:114.058, area:'今州城&中曲台地', layer:'ground', desc:'今州城辉光宝箱，可获取星声。', rewards:['星声×25','贝币×4000'] },
+        { id:'p3', name:'今州城声匣(01)', type:'collectible', lat:22.546, lng:114.064, area:'今州城&中曲台地', layer:'ground', desc:'城区建筑旁的声匣。', rewards:['声匣×1'] },
+        { id:'p4', name:'今州城声匣(02)', type:'collectible', lat:22.554, lng:114.057, area:'今州城&中曲台地', layer:'ground', desc:'另一处声匣收集点。', rewards:['声匣×1'] },
+        { id:'p5', name:'荒石高地传送锚点', type:'teleport', lat:22.510, lng:114.110, area:'荒石高地', layer:'ground', desc:'荒石高地核心锚点。', rewards:['联觉经验×20'] },
+        { id:'p6', name:'荒石高地Cost3刷取路线', type:'elite', lat:22.507, lng:114.115, area:'荒石高地', layer:'ground', desc:'精英石头人互殴区域，刷Cost3声骸。', rewards:['声骸掉落'] },
+        { id:'p7', name:'焚焰海十字路口辉光宝箱', type:'chest', lat:22.518, lng:114.095, area:'荒石高地', layer:'ground', desc:'十字路口小椅子旁。', rewards:['星声×25','贝币×4000'] },
+        { id:'p8', name:'稷廷遗址引导晶核(1)', type:'collectible', lat:22.505, lng:114.068, area:'稷廷遗址', layer:'ruins', desc:'怨鸟泽解密获得晶核。', rewards:['引导晶核×1'] },
+        { id:'p9', name:'稷廷遗址终极金宝箱', type:'chest', lat:22.500, lng:114.065, area:'稷廷遗址', layer:'ruins', desc:'提交两枚晶核解锁终极宝箱。', rewards:['星声×40','贝币×8000'] },
+        { id:'p10', name:'七丘秘境入口', type:'teleport', lat:22.480, lng:113.970, area:'七丘', layer:'ground', desc:'七丘秘境每周可挑战一次。', rewards:['星声×50'] },
+        { id:'p11', name:'七丘宝箱群', type:'chest', lat:22.485, lng:113.965, area:'七丘', layer:'ground', desc:'七丘区域辉光宝箱密集区。', rewards:['星声×20','贝币×3000'] },
+        { id:'p12', name:'云陵谷宝箱(1-4)', type:'chest', lat:22.544, lng:114.072, area:'今州城&中曲台地', layer:'ground', desc:'云陵谷凹陷地形宝箱集中点。', rewards:['星声×15','贝币×2000'] },
+        { id:'p13', name:'云陵谷声匣', type:'collectible', lat:22.543, lng:114.071, area:'今州城&中曲台地', layer:'ground', desc:'云陵谷声匣收集点。', rewards:['声匣×1'] },
+      ];
 
-// 基于真实攻略的任务数据
-const tasksData = [
-  { id:'q1', name:'嘤鸣初相召', type:'story', order:1, area:'今州城', npc:'炽霞', rewards:'联觉经验×150', desc:'【第一章·第一幕】前往攀花饭馆与炽霞见面，进入初始副本战斗。', coords:[22.550,114.062] },
-  { id:'q2', name:'撞金止行阵', type:'story', order:2, area:'今州城', npc:'-', rewards:'联觉经验×200', desc:'【第一章·第二幕】返回基地与NPC对话完成本章。', coords:[22.548,114.060] },
-  { id:'q3', name:'奔策候残星', type:'story', order:3, area:'夜归城', npc:'-', rewards:'联觉经验×300', desc:'【第一章·第三幕】前往祈池村接取任务，击败三个异常频率怪物，调查地点并突破幻境。', coords:[22.535,114.052] },
-  { id:'q4', name:'庭际刀刃鸣', type:'story', order:4, area:'夜归城', npc:'-', rewards:'联觉经验×400', desc:'【第一章·第四幕】联觉等级14级解锁。', coords:[22.532,114.049] },
-  { id:'q8', name:'冰原下的星炬', type:'story', order:8, area:'罗伊冰原', npc:'-', rewards:'联觉经验×600', desc:'【第三章·第一幕】拉海洛剧情线，需要先完成2.0前置章节。', coords:[22.500,114.040] },
-  { id:'q9', name:'远航星', type:'story', order:9, area:'-', npc:'-', rewards:'联觉经验×500', desc:'【第三章·第三幕】完成此幕可解锁3.1版本剧情任务“星炬予你”。', coords:null },
-  // 伴星任务 (危行/伴星)
-  { id:'q5', name:'伴星任务·凌阳', type:'side', order:5, area:'归墟港市', npc:'凌阳', rewards:'联觉经验×250', desc:'卡主线等级时优先完成，系统自动传送到任务地点。', coords:[22.520,114.080] },
-  { id:'q6', name:'危行任务·归墟港市', type:'side', order:6, area:'归墟港市', npc:'-', rewards:'联觉经验×300', desc:'无需跑图，自动传送。经验奖励充足，可帮助突破14级主线限制。', coords:[22.520,114.080] },
-  { id:'q7', name:'勘探悖论之域', type:'daily', order:99, area:'黯原', npc:'-', rewards:'活动代币×100', desc:'3.3版本活动，需先解锁黯原四大区域信标。', coords:null },
-];
+      // 真实任务数据
+      const tasksData = [
+        { id:'q1', name:'嘤鸣初相召', type:'story', order:1, area:'今州城', npc:'炽霞', rewards:'联觉经验×150', desc:'【第一章·第一幕】前往攀花饭馆与炽霞见面。', coords:[22.550,114.062] },
+        { id:'q2', name:'撞金止行阵', type:'story', order:2, area:'今州城', npc:'-', rewards:'联觉经验×200', desc:'【第一章·第二幕】返回基地完成本章。', coords:[22.548,114.060] },
+        { id:'q3', name:'奔策候残星', type:'story', order:3, area:'夜归城', npc:'-', rewards:'联觉经验×300', desc:'【第一章·第三幕】祈池村击败异常频率怪物。', coords:[22.535,114.052] },
+        { id:'q4', name:'庭际刀刃鸣', type:'story', order:4, area:'夜归城', npc:'-', rewards:'联觉经验×400', desc:'【第一章·第四幕】联觉等级14级解锁。', coords:[22.532,114.049] },
+        { id:'q8', name:'冰原下的星炬', type:'story', order:8, area:'罗伊冰原', npc:'-', rewards:'联觉经验×600', desc:'【第三章·第一幕】拉海洛剧情线。', coords:[22.500,114.040] },
+        { id:'q5', name:'伴星任务·凌阳', type:'side', order:5, area:'归墟港市', npc:'凌阳', rewards:'联觉经验×250', desc:'卡主线等级时优先完成。', coords:[22.520,114.080] },
+        { id:'q6', name:'危行任务·归墟港市', type:'side', order:6, area:'归墟港市', npc:'-', rewards:'联觉经验×300', desc:'自动传送，经验充足。', coords:[22.520,114.080] },
+        { id:'q7', name:'勘探悖论之域', type:'daily', order:99, area:'黯原', npc:'-', rewards:'活动代币×100', desc:'3.3版本常驻科考玩法。', coords:null },
+      ];
 
-// 基于真实游戏资源的材料数据
-const resourcesData = [
-  { id:'r1', name:'金阳凤', category:'character', icon:'🌺', desc:'忌炎、安可突破材料', usage:'采集或商店购买', area:'今州城出锚点木屋旁', density:'中', coords:[22.550,114.062] },
-  { id:'r2', name:'赤铃兰', category:'character', icon:'🌷', desc:'绯雪突破材料', usage:'指定地图采集或商店购买', area:'罗伊冰原', density:'中', coords:[22.510,114.045] },
-  { id:'r3', name:'霜信花', category:'character', icon:'🌸', desc:'琳奈突破材料', usage:'罗伊冰原·星炬学院上方传送点附近', area:'罗伊冰原', density:'中', coords:[22.498,114.038] },
-  { id:'r4', name:'觊日者的指尖', category:'character', icon:'💠', desc:'BOSS海维夏掉落', usage:'罗伊冰原·联运椎骨左下方', area:'罗伊冰原', density:'低', coords:[22.495,114.042] },
-  { id:'r5', name:'螺算石母', category:'character', icon:'💎', desc:'西格莉卡突破材料', usage:'采集获取', area:'罗伊冰原', density:'中', coords:[22.505,114.050] },
-  { id:'r6', name:'忆中沉金', category:'weapon', icon:'🔮', desc:'周本BOSS辛吉勒姆掉落', usage:'罗伊冰原·覆海原', area:'罗伊冰原', density:'低', coords:[22.490,114.055] },
-  { id:'r7', name:'海蚀碎晶', category:'weapon', icon:'💠', desc:'衍射属性角色技能材料', usage:'多种角色养成', area:'罗伊冰原', density:'高', coords:[22.500,114.050] },
-  { id:'r8', name:'隧花声核系列', category:'weapon', icon:'🔊', desc:'绯雪及其他角色技能材料', usage:'日常副本/开放世界', area:'今州城&中曲台地', density:'高', coords:[22.545,114.065] },
-  { id:'r9', name:'贝币', category:'currency', icon:'🪙', desc:'通用货币', usage:'日常消费、角色升级', area:'全区域', density:'高', coords:[22.550,114.062] },
-  { id:'r10', name:'星声', category:'currency', icon:'⭐', desc:'高级货币', usage:'抽卡、商店兑换', area:'全区域', density:'低', coords:[22.550,114.062] },
-  { id:'r11', name:'密音筒/协调器', category:'weapon', icon:'📯', desc:'声骸养成材料', usage:'无音区/梦魇祓除/商店兑换', area:'荒石高地', density:'高', coords:[22.510,114.110] },
-  { id:'r12', name:'共鸣者经验材料', category:'character', icon:'📜', desc:'角色经验', usage:'模拟领域', area:'今州城', density:'高', coords:[22.548,114.060] },
-];
+      // 资源数据
+      const resourcesData = [
+        { id:'r1', name:'金阳凤', cat:'character', icon:'🌺', desc:'忌炎、安可突破材料', area:'今州城出锚点木屋旁', coords:[22.550,114.062] },
+        { id:'r2', name:'赤铃兰', cat:'character', icon:'🌷', desc:'绯雪突破材料', area:'罗伊冰原', coords:[22.510,114.045] },
+        { id:'r3', name:'霜信花', cat:'character', icon:'🌸', desc:'琳奈突破材料', area:'罗伊冰原·星炬学院', coords:[22.498,114.038] },
+        { id:'r4', name:'觊日者的指尖', cat:'character', icon:'💠', desc:'BOSS海维夏掉落', area:'罗伊冰原', coords:[22.495,114.042] },
+        { id:'r5', name:'海蚀碎晶', cat:'weapon', icon:'💠', desc:'衍射属性技能材料', area:'罗伊冰原', coords:[22.500,114.050] },
+        { id:'r6', name:'密音筒/协调器', cat:'weapon', icon:'📯', desc:'声骸养成材料', area:'荒石高地', coords:[22.510,114.110] },
+        { id:'r7', name:'贝币', cat:'currency', icon:'🪙', desc:'通用货币', area:'全区域', coords:[22.550,114.062] },
+        { id:'r8', name:'星声', cat:'currency', icon:'⭐', desc:'高级货币', area:'全区域', coords:[22.550,114.062] },
+      ];
 
-// ==================== 地图初始化与渲染逻辑 ====================
-let markerStatusMap = {};
-let activeLayer = 'ground';
-let activeTypeFilter = 'all';
-let showUncollectedOnly = false;
-let mapInstance = null;
-let markerLayerGroup = null;
-let currentDetailPoint = null;
+      // 攻略文章数据 (完整内容)
+      const articles = [
+        { id:'a1', title:'3.3版本全角色强度排行榜', tag:'hot', icon:'🏆', summary:'绯雪、爱弥斯、琳奈登顶T0人权；附抽取优先级与配队思路。', content:`
+          <h2>🏆 3.3版本全角色强度排行榜</h2>
+          <p><strong>T0（人权级，全场景必练）：</strong>绯雪（五星冷凝主C，0命完全体，霸体+大范围冻结清怪拉满）、爱弥斯（热熔体系核心，偏谐/聚爆双玩法，对单对群全能）、琳奈（全游最泛用人权辅助，能奶能拐能聚怪，所有主C的版本答案）、西格莉卡（老牌强C，输出稳定、机制成熟，新手友好）。</p>
+          <p><strong>T0.5（体系核心/强力专辅）：</strong>达妮娅（爱弥斯聚爆队专属超级辅助）、莫宁（万能通用辅助，高额增伤）、千咲（效应体系通辅，聚怪+群盾）、卡提希娅（对单天花板，操作上限极高）、尤诺（风队核心，与奥古斯塔组成日月队）。</p>
+          <p><strong>T1（体系合格强势）：</strong>奥古斯塔、守岸人、珂莱塔、夏空、洛可可、坎特雷拉、维里耶。</p>
+          <p><strong>抽取建议：</strong>新老玩家优先拿下绯雪（0命即可）；有爱弥斯必抽达妮娅；琳奈和莫宁是万能辅助，无脑抽。</p>
+        `},
+        { id:'a2', title:'3.3版本最强配队推荐', tag:'hot', icon:'⚔️', summary:'当前版本四大T0配队：震谐火核弹、聚爆铁三角等阵容全解析。', content:`
+          <h2>⚔️ 3.3版本最强配队推荐</h2>
+          <p><strong>① 震谐火核弹队（版本最强）：</strong>爱弥斯（主C）+ 琳奈 + 莫宁。三震谐激活全队偏谐buff，莫宁叠增伤，琳奈大招提供全伤害加成，循环顺畅无短板。[reference:0]</p>
+          <p><strong>② 绯雪平民霜渐队：</strong>绯雪 + 千咲 + 琳奈。绯雪主C爆发冻结，千咲提供聚怪与减抗，琳奈奶拐聚一体。无琳奈可用鉴心或折枝替代，无千咲可用莫宁或维里奈作为下位替代。[reference:1]</p>
+          <p><strong>③ 聚爆铁三角：</strong>爱弥斯（主C）+ 达妮娅（专辅/副C）+ 千咲（减抗/续航）。达妮娅开启泡泡领域聚怪控场，叠加集谐层数提供高额热熔与聚爆增伤，千咲高频挂减抗保障输出拉满。[reference:2]</p>
+          <p><strong>④ 西格莉卡气动标配队：</strong>西格莉卡 + 仇远 + 治疗位（维里奈/白芷）。仇远延奏为西格莉卡叠加气动增伤，西格莉卡释放声骸技能主打核心爆发。[reference:3]</p>
+        `},
+        { id:'a3', title:'新手开局角色推荐', tag:'guide', icon:'🌟', summary:'凛音、白芷、散华——3位最容易获取且好用的新手机制解析。', content:`
+          <h2>🌟 新手开局角色推荐</h2>
+          <p>新手开局的核心原则：操作简单、生存能力强、开荒效率高。无需追求强度天花板，前期资源集中砸向1-2个主力。[reference:4]</p>
+          <p><strong>Top1：凛音（初始赠送，远程输出+轻微辅助）</strong>——操作最简单，技能自带护盾与闪避反击，清怪效率高，新手零翻车率。[reference:5]</p>
+          <p><strong>Top2：白芷（剧情初期获取，T0级治疗辅助）</strong>——提供稳定群体治疗，大招开启后全队提升20%攻击力（持续12秒），5命还能解锁复活队友能力，全阶段必练。[reference:6]</p>
+          <p><strong>Top3：散华（维里奈/守岸人替代品）</strong>——零氪微氪最优解，适配绝大多数开荒场景，能快速成型队伍、降低副本难度。[reference:7]</p>
+        `},
+        { id:'a4', title:'新手入坑全流程指南', tag:'guide', icon:'📖', summary:'从1级到满级：主线推进策略、世界等级注意事项、每日必做。', content:`
+          <h2>📖 新手入坑全流程指南</h2>
+          <p><strong>主线推进策略：</strong>8级前全程跟随主线；8-14级卡主线时转向危行任务、伴星任务和地图探索；14级后提升数据坞等级获取高品质声骸。[reference:8][reference:9]</p>
+          <p><strong>关键注意事项：</strong>①任务优先级牢记——潮汐主线 > 道引任务 > 伴星任务 > 危行任务 > 纪闻任务 > 限时活动；②世界等级每10级自动升，20/40/60级需打试炼突破，打不过可手动降级；③常规体力结晶波片上限240（6分钟回1点），优先刷角色/武器突破材料、技能材料，每周3次周本必打。[reference:10]</p>
+          <p><strong>养成顺序：</strong>角色等级 > 武器等级 > 技能等级 > 声骸。主C优先拉满90级，标配队伍：主C+副C+辅助+奶妈。[reference:11]</p>
+        `},
+        { id:'a5', title:'声骸系统入门到毕业', tag:'guide', icon:'🎵', summary:'套装搭配、词条优先级、刷取路线以及主C/辅助毕业面板参考。', content:`
+          <h2>🎵 声骸系统入门到毕业</h2>
+          <p><strong>基础认知：</strong>声骸=套装装备+宠物技能，打怪随机掉落。分绿蓝紫金四档，数据坞等级越高金色概率越大。新手前期别追求完美词条，有啥用啥。[reference:12]</p>
+          <p><strong>主C通用搭配：3+2</strong>方案——分别获取C3（主词条：对应属性伤害加成×2）和C1（主词条：攻击百分比×2）部位套装即可。毕业分配固定43311。</p>
+          <p><strong>辅助通用：</strong>不绝余音两件套（大量角色可适用），治疗位可用隐世回光套（4C可选生命/攻击/防御/治疗量提升）。[reference:13]</p>
+          <p><strong>词条优先级：</strong>双暴 > 攻击力百分比 > 共鸣效率。暴击率建议70%+，暴击伤害260%+，共鸣效率120%-130%。</p>
+        `},
+        { id:'a6', title:'全角色突破材料速查', tag:'guide', icon:'📦', summary:'绯雪、琳奈、赞妮、布兰特等常用角色突破材料的BOSS位置。', content:`
+          <h2>📦 全角色突破材料速查</h2>
+          <p><strong>绯雪（冷凝主C）：</strong>赤铃兰（罗伊冰原采集）、觊日者的指尖（BOSS海维夏掉落，罗伊冰原·联运椎骨左下方）。</p>
+          <p><strong>琳奈（泛用辅助）：</strong>霜信花（罗伊冰原·星炬学院上方传送点附近采集）、海蚀碎晶（衍射属性技能材料，罗伊冰原大量分布）。[reference:14]</p>
+          <p><strong>赞妮：</strong>白金机心（BOSS异构武装掉落）、剑菖蒲（拉古那城内/埃格拉镇外侧采集）、聚方声核系列（轰鸣种/静默种残象掉落）。[reference:15]</p>
+          <p><strong>布兰特：</strong>焚磷厄骨（叹息古龙掉落，黎那汐塔·悲叹墓岛）、金羊毛（船首祭地采集/商店购买）。[reference:16]</p>
+          <p><strong>夏空：</strong>突破材料焚磷厄骨（叹息古龙）、采集物金羊毛（悲叹墓岛采集/药剂商店购买）。[reference:17]</p>
+        `},
+        { id:'a7', title:'今州城/七丘地图收集攻略', tag:'guide', icon:'🗺️', summary:'今州城25个宝箱分布、声匣全点位坐标。', content:`
+          <h2>🗺️ 今州城/七丘地图收集攻略</h2>
+          <p><strong>今州城收集数据：</strong>共计25个宝箱（北部中曲台地）、5个声匣（中部地区）、宝箱26-41（东南区域）、2个声匣（南部区域）。收集全部声匣可兑换游戏奖励。[reference:18]</p>
+          <p><strong>声匣收集口诀：</strong>抬头看天，低头看地，再找机关！每个地图过任务时注意左上角地图，宝箱图标就是声匣，到了图标位置没看见就按口诀排查。[reference:19]</p>
+          <p><strong>七丘地区收集：</strong>需准备魔术先生声骸、热海黄梨披萨。星星=声匣，钻石=包括红名在内的地上宝箱（不包括围墙内）。[reference:20]</p>
+        `},
+      ];
 
-function loadStatus() {
-  try {
-    const s = localStorage.getItem('ww_guide_status');
-    if (s) markerStatusMap = JSON.parse(s);
-  } catch(e) { markerStatusMap = {}; }
-}
-function saveStatus() {
-  try { localStorage.setItem('ww_guide_status', JSON.stringify(markerStatusMap)); } catch(e) {}
-}
-function getStatus(id) { return markerStatusMap[id] || 'undiscovered'; }
-function setStatus(id, st) { markerStatusMap[id] = st; saveStatus(); updateMarkers(); updateStats(); }
+      // ==================== 状态管理 ====================
+      let markerStatus = {};
+      let mapInstance, markerGroup;
+      let currentArticle = null;
 
-function initMap() {
-  mapInstance = L.map('map', { center: mapCenter, zoom: defaultZoom, zoomControl: false, attributionControl: false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd' }).addTo(mapInstance);
-  markerLayerGroup = L.layerGroup().addTo(mapInstance);
-  updateMarkers();
-  updateStats();
-}
+      function loadStatus() {
+        try { const s = localStorage.getItem('ww_status_v2'); if (s) markerStatus = JSON.parse(s); } catch(e) { markerStatus = {}; }
+      }
+      function saveStatus() { try { localStorage.setItem('ww_status_v2', JSON.stringify(markerStatus)); } catch(e) {} }
+      function getStatus(id) { return markerStatus[id] || 'undiscovered'; }
+      function setStatus(id, st) { markerStatus[id] = st; saveStatus(); renderMarkers(); updateStats(); }
 
-function createIcon(pt, status) {
-  const colors = { teleport:'#58a6ff', chest:'#e8c860', collectible:'#a371f7', elite:'#f85149', resource:'#3fb950', npc:'#d2991d' };
-  const icons = { teleport:'🌀', chest:'🎁', collectible:'✨', elite:'👾', resource:'🌿', npc:'❕' };
-  const col = colors[pt.type] || '#ccc';
-  const isCollected = status === 'collected';
-  const html = `<div class="marker-dot ${isCollected ? 'collected-mark' : ''}" style="background:${col}33;border-color:${isCollected ? '#aaa' : col};${isCollected ? 'opacity:0.55;filter:grayscale(35%);' : ''}">${icons[pt.type] || '📍'}</div>`;
-  return L.divIcon({ className:'custom-marker', html, iconSize:[28,28], iconAnchor:[14,14] });
-}
+      // ==================== 地图初始化 ====================
+      function initMap() {
+        mapInstance = L.map('map', { center: mapCenter, zoom: defaultZoom, zoomControl: false, attributionControl: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd' }).addTo(mapInstance);
+        markerGroup = L.layerGroup().addTo(mapInstance);
+        renderMarkers();
+        updateStats();
+      }
 
-function updateMarkers() {
-  if (!markerLayerGroup) return;
-  markerLayerGroup.clearLayers();
-  realPoints.forEach(pt => {
-    const status = getStatus(pt.id || pt.name);
-    if (activeLayer !== 'all' && pt.layer !== activeLayer) return;
-    if (activeTypeFilter !== 'all' && pt.type !== activeTypeFilter) return;
-    if (showUncollectedOnly && status === 'collected') return;
-    const marker = L.marker([pt.lat, pt.lng], { icon: createIcon(pt, status) }).addTo(markerLayerGroup);
-    marker.on('click', () => openDetail(pt));
-  });
-}
+      function renderMarkers() {
+        if (!markerGroup) return;
+        markerGroup.clearLayers();
+        const colors = { teleport:'#58a6ff', chest:'#e8c860', collectible:'#a371f7', elite:'#f85149', resource:'#3fb950', npc:'#d2991d' };
+        const icons = { teleport:'🌀', chest:'🎁', collectible:'✨', elite:'👾', resource:'🌿', npc:'❕' };
+        allPoints.forEach(pt => {
+          const st = getStatus(pt.id);
+          const isCol = st === 'collected';
+          const col = colors[pt.type] || '#ccc';
+          const html = `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:${col}33;border:2px solid ${isCol ? '#aaa' : col};${isCol ? 'opacity:0.5;filter:grayscale(40%);' : ''}">${icons[pt.type]||'📍'}</div>`;
+          const icon = L.divIcon({ className:'', html, iconSize:[26,26], iconAnchor:[13,13] });
+          const m = L.marker([pt.lat, pt.lng], { icon }).addTo(markerGroup);
+          m.on('click', () => openPointDetail(pt));
+        });
+      }
 
-function updateStats() {
-  const total = realPoints.length;
-  let collected = 0;
-  realPoints.forEach(pt => { if (getStatus(pt.id || pt.name) === 'collected') collected++; });
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statCollected').textContent = collected;
-  document.getElementById('statPercent').textContent = total > 0 ? Math.round((collected / total) * 100) + '%' : '0%';
-}
+      function updateStats() {
+        const total = allPoints.length;
+        let collected = 0;
+        allPoints.forEach(pt => { if (getStatus(pt.id) === 'collected') collected++; });
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statCollected').textContent = collected;
+        document.getElementById('statPercent').textContent = total > 0 ? Math.round((collected / total) * 100) + '%' : '0%';
+      }
 
-// ==================== 详情弹窗 ====================
-function openDetail(pt) {
-  currentDetailPoint = pt;
-  const status = getStatus(pt.id || pt.name);
-  const labels = { undiscovered:'未发现', marked:'已标记', collected:'已收集' };
-  const rewardsHtml = pt.rewards ? `<div style="color:var(--accent);margin-top:6px;">🎁 ${pt.rewards.join('、')}</div>` : '';
-  document.getElementById('detailContent').innerHTML = `
-    <div class="detail-title">${pt.name}</div>
-    <div class="detail-coords">坐标 (${pt.lat.toFixed(3)}, ${pt.lng.toFixed(3)}) | ${pt.area} | ${pt.layer}</div>
-    <div class="detail-desc">${pt.desc || ''}</div>
-    ${rewardsHtml}
-    <div style="margin-top:8px;">状态：${labels[status]}</div>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-      <button class="btn btn-outline" onclick="window._setPStatus('undiscovered')">未发现</button>
-      <button class="btn btn-outline" onclick="window._setPStatus('marked')">已标记</button>
-      <button class="btn btn-fill" onclick="window._setPStatus('collected')">已收集</button>
-    </div>
-    <button class="btn btn-outline" style="width:100%;margin-top:8px;" onclick="document.getElementById('detailOverlay').style.display='none'">关闭</button>
-  `;
-  document.getElementById('detailOverlay').style.display = 'flex';
-}
-window._setPStatus = (st) => {
-  if (!currentDetailPoint) return;
-  setStatus(currentDetailPoint.id || currentDetailPoint.name, st);
-  document.getElementById('detailOverlay').style.display = 'none';
-  showToast(`已更新为 ${st}`);
-};
-document.getElementById('detailOverlay').addEventListener('click', e => { if (e.target === document.getElementById('detailOverlay')) document.getElementById('detailOverlay').style.display = 'none'; });
+      // ==================== 弹窗系统 ====================
+      function openModal(html) {
+        document.getElementById('modalContent').innerHTML = html;
+        document.getElementById('modalOverlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal() {
+        document.getElementById('modalOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+        currentArticle = null;
+      }
+      document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 
-// ==================== Toast ====================
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 2000);
-}
+      function openPointDetail(pt) {
+        const st = getStatus(pt.id);
+        const labels = { undiscovered:'未发现', marked:'已标记', collected:'已收集' };
+        let html = `<div class="article-detail"><h2>${pt.name}</h2><p>📍 (${pt.lat.toFixed(3)}, ${pt.lng.toFixed(3)}) | ${pt.area} | ${pt.layer}</p><p>${pt.desc || ''}</p>`;
+        if (pt.rewards) html += `<p>🎁 奖励：${pt.rewards.join('、')}</p>`;
+        html += `<p>状态：${labels[st]}</p><div style="display:flex;gap:8px;margin-top:8px;"><button class="btn" onclick="window._setPtStatus('${pt.id}','undiscovered')">未发现</button><button class="btn" onclick="window._setPtStatus('${pt.id}','marked')">已标记</button><button class="btn btn-fill" onclick="window._setPtStatus('${pt.id}','collected')">已收集</button></div></div>`;
+        openModal(html);
+      }
+      window._setPtStatus = (id, st) => { setStatus(id, st); closeModal(); showToast(`已更新为 ${({undiscovered:'未发现',marked:'已标记',collected:'已收集'})[st]}`); };
 
-// ==================== 搜索 ====================
-function search(q) {
-  if (!q || !q.trim()) return;
-  const kw = q.trim().toLowerCase();
-  const found = realPoints.find(p => p.name.toLowerCase().includes(kw) || p.area.toLowerCase().includes(kw));
-  if (found) { mapInstance.setView([found.lat, found.lng], 15); setTimeout(() => openDetail(found), 300); showToast('已定位：'+found.name); return; }
-  const ft = tasksData.find(t => t.name.toLowerCase().includes(kw));
-  if (ft && ft.coords) { mapInstance.setView(ft.coords, 15); showToast('已定位任务：'+ft.name); return; }
-  const fr = resourcesData.find(r => r.name.toLowerCase().includes(kw));
-  if (fr) { mapInstance.setView(fr.coords, 15); showToast('已定位资源：'+fr.name); return; }
-  showToast('未找到结果');
-}
-document.getElementById('searchDesktop').addEventListener('keydown', e => { if (e.key === 'Enter') { search(e.target.value); e.target.value = ''; } });
-document.getElementById('searchMini').addEventListener('keydown', e => { if (e.key === 'Enter') { search(e.target.value); e.target.value = ''; } });
+      function openArticle(article) {
+        currentArticle = article;
+        let html = `<div class="article-detail"><h2>${article.icon} ${article.title}</h2>${article.content}</div>`;
+        openModal(html);
+      }
 
-// ==================== 筛选/图层 ====================
-document.getElementById('layerToggle').addEventListener('click', e => {
-  const btn = e.target.closest('button'); if (!btn) return;
-  document.querySelectorAll('#layerToggle button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeLayer = btn.dataset.layer;
-  updateMarkers();
-});
-document.getElementById('filterChips').addEventListener('click', e => {
-  const chip = e.target.closest('.filter-chip'); if (!chip) return;
-  document.querySelectorAll('#filterChips .filter-chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  activeTypeFilter = chip.dataset.type;
-  updateMarkers();
-});
-document.getElementById('chkUncollectedOnly').addEventListener('change', function() {
-  showUncollectedOnly = this.checked;
-  updateMarkers();
-});
+      // ==================== Toast ====================
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+      }
 
-// ==================== 任务/资源面板 ====================
-let taskFilter = 'all', resFilter = 'all';
-function renderTasks() {
-  const list = tasksData.filter(t => taskFilter === 'all' || t.type === taskFilter);
-  document.getElementById('taskListContainer').innerHTML = list.map(t => `
-    <div class="task-card" onclick="${t.coords ? `window._goto(${t.coords[0]},${t.coords[1]})` : ''}">
-      ${t.order < 20 ? `<div class="task-order">${t.order}</div>` : ''}
-      <div class="task-name">${t.name} <span class="tag ${t.type==='story'?'tag-story':t.type==='side'?'tag-side':'tag-zone'}">${t.type==='story'?'主线':t.type==='side'?'支线':'日常'}</span></div>
-      <div class="task-meta">📍 ${t.area} | 👤 ${t.npc}</div>
-      <div class="task-reward">🎁 ${t.rewards}</div>
-      <div style="font-size:11px;color:var(--text-muted);">${t.desc}</div>
-    </div>
-  `).join('');
-}
-function renderResources() {
-  const list = resourcesData.filter(r => resFilter === 'all' || r.category === resFilter);
-  const catBg = { character:'rgba(248,81,73,0.2)', weapon:'rgba(88,166,255,0.2)', currency:'rgba(232,200,96,0.2)', collectible:'rgba(163,113,247,0.2)' };
-  document.getElementById('resourceListContainer').innerHTML = list.map(r => `
-    <div class="resource-card" onclick="window._goto(${r.coords[0]},${r.coords[1]})">
-      <div class="resource-icon" style="background:${catBg[r.category] || '#333'};">${r.icon}</div>
-      <div style="flex:1;"><div style="font-weight:600;">${r.name}</div><div style="font-size:11px;color:var(--text-muted);">${r.desc} · ${r.area}</div></div>
-    </div>
-  `).join('');
-}
-window._goto = (lat, lng) => { if (mapInstance) mapInstance.setView([lat, lng], 15); };
-document.getElementById('taskFilterChips').addEventListener('click', e => {
-  const chip = e.target.closest('.filter-chip'); if (!chip) return;
-  document.querySelectorAll('#taskFilterChips .filter-chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  taskFilter = chip.dataset.taskFilter;
-  renderTasks();
-});
-document.getElementById('resourceFilterChips').addEventListener('click', e => {
-  const chip = e.target.closest('.filter-chip'); if (!chip) return;
-  document.querySelectorAll('#resourceFilterChips .filter-chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  resFilter = chip.dataset.resFilter;
-  renderResources();
-});
+      // ==================== 渲染列表 ====================
+      function renderBlogList() {
+        document.getElementById('panelBlog').innerHTML = articles.map(a => `
+          <div class="blog-card" onclick="window._openArticle('${a.id}')">
+            <h3>${a.icon} ${a.title} <span class="tag tag-${a.tag === 'hot' ? 'hot' : a.tag === 'guide' ? 'guide' : 'new'}">${a.tag === 'hot' ? '热门' : a.tag === 'guide' ? '指南' : '新版'}</span></h3>
+            <p>${a.summary}</p>
+          </div>
+        `).join('');
+      }
+      window._openArticle = (id) => {
+        const a = articles.find(x => x.id === id);
+        if (a) openArticle(a);
+      };
 
-// ==================== 标签页切换 ====================
-document.getElementById('tabNav').addEventListener('click', e => {
-  const btn = e.target.closest('button'); if (!btn) return;
-  document.querySelectorAll('#tabNav button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const tab = btn.dataset.tab;
-  document.getElementById('panelFilter').classList.toggle('hidden', tab !== 'filter');
-  document.getElementById('panelTasks').classList.toggle('hidden', tab !== 'tasks');
-  document.getElementById('panelResources').classList.toggle('hidden', tab !== 'resources');
-  if (tab === 'tasks') renderTasks();
-  if (tab === 'resources') renderResources();
-});
+      function renderTasks() {
+        document.getElementById('taskListContainer').innerHTML = tasksData.map(t => `
+          <div class="blog-card" onclick="${t.coords ? `mapInstance.setView([${t.coords[0]},${t.coords[1]}],15)` : ''}">
+            <h3>${t.order < 20 ? `[${t.order}] ` : ''}${t.name} <span class="tag tag-guide">${t.type==='story'?'主线':t.type==='side'?'支线':'日常'}</span></h3>
+            <p>📍 ${t.area} | 👤 ${t.npc}</p><p>🎁 ${t.rewards}</p><p style="color:var(--text-muted);">${t.desc}</p>
+          </div>
+        `).join('');
+      }
 
-// ==================== 地图控件 ====================
-document.getElementById('btnZoomIn').addEventListener('click', () => mapInstance.zoomIn());
-document.getElementById('btnZoomOut').addEventListener('click', () => mapInstance.zoomOut());
-document.getElementById('btnResetView').addEventListener('click', () => { mapInstance.setView(mapCenter, defaultZoom); activeLayer='ground'; activeTypeFilter='all'; showUncollectedOnly=false; document.querySelectorAll('#layerToggle button').forEach(b=>b.classList.remove('active')); document.querySelector('#layerToggle button[data-layer="ground"]')?.classList.add('active'); document.querySelectorAll('#filterChips .filter-chip').forEach(c=>c.classList.remove('active')); document.querySelector('#filterChips .filter-chip[data-type="all"]')?.classList.add('active'); document.getElementById('chkUncollectedOnly').checked=false; updateMarkers(); });
+      function renderResources() {
+        document.getElementById('resourceListContainer').innerHTML = resourcesData.map(r => `
+          <div class="blog-card" onclick="mapInstance.setView([${r.coords[0]},${r.coords[1]}],15)">
+            <h3>${r.icon} ${r.name} <span class="tag tag-new">${r.cat}</span></h3>
+            <p>${r.desc} · ${r.area}</p>
+          </div>
+        `).join('');
+      }
 
-// ==================== 移动端适配 ====================
-document.getElementById('mobileBottomBar').addEventListener('click', e => {
-  const nav = e.target.closest('.nav-item'); if (!nav) return;
-  document.querySelectorAll('#mobileBottomBar .nav-item').forEach(n => n.classList.remove('active'));
-  nav.classList.add('active');
-  const key = nav.dataset.mobileNav;
-  if (key === 'map') { document.getElementById('mobilePanelOverlay').style.display='none'; document.getElementById('mobilePanel').style.display='none'; return; }
-  let html = '';
-  if (key === 'filter') html = `<h4>筛选</h4>${document.getElementById('panelFilter').innerHTML}`;
-  else if (key === 'tasks') { renderTasks(); html = `<h4>任务</h4>${document.getElementById('taskListContainer').innerHTML}`; }
-  else if (key === 'resources') { renderResources(); html = `<h4>资源</h4>${document.getElementById('resourceListContainer').innerHTML}`; }
-  document.getElementById('mobilePanelContent').innerHTML = html;
-  document.getElementById('mobilePanelOverlay').style.display = 'block';
-  document.getElementById('mobilePanel').style.display = 'block';
-});
-document.getElementById('mobilePanelOverlay').addEventListener('click', () => {
-  document.getElementById('mobilePanelOverlay').style.display = 'none';
-  document.getElementById('mobilePanel').style.display = 'none';
-});
+      // ==================== 搜索 ====================
+      function search(q) {
+        if (!q || !q.trim()) return;
+        const kw = q.trim().toLowerCase();
+        // 搜索文章
+        const fa = articles.find(a => a.title.toLowerCase().includes(kw) || a.summary.toLowerCase().includes(kw));
+        if (fa) { openArticle(fa); return; }
+        // 搜索点位
+        const fp = allPoints.find(p => p.name.toLowerCase().includes(kw));
+        if (fp) { mapInstance.setView([fp.lat, fp.lng], 15); setTimeout(() => openPointDetail(fp), 300); return; }
+        showToast('未找到匹配结果');
+      }
+      document.getElementById('searchDesktop').addEventListener('keydown', e => { if (e.key === 'Enter') { search(e.target.value); e.target.value = ''; } });
+      document.getElementById('searchMini').addEventListener('keydown', e => { if (e.key === 'Enter') { search(e.target.value); e.target.value = ''; } });
 
-// ==================== 初始化 ====================
-function init() {
-  loadStatus();
-  initMap();
-  renderTasks();
-  renderResources();
-}
-document.addEventListener('DOMContentLoaded', init);
-window.addEventListener('resize', () => { if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 100); });
-})();
-</script>
+      // ==================== 标签页切换 ====================
+      let activeTab = 'blog';
+      document.getElementById('tabNav').addEventListener('click', e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        document.querySelectorAll('#tabNav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeTab = btn.dataset.tab;
+        document.getElementById('panelBlog').classList.toggle('hidden', activeTab !== 'blog');
+        document.getElementById('panelMap').classList.toggle('hidden', activeTab !== 'map');
+        document.getElementById('panelTasks').classList.toggle('hidden', activeTab !== 'tasks');
+        document.getElementById('panelResources').classList.toggle('hidden', activeTab !== 'resources');
+        if (activeTab === 'tasks') renderTasks();
+        if (activeTab === 'resources') renderResources();
+      });
+
+      // ==================== 地图控件 ====================
+      document.getElementById('btnZoomIn').addEventListener('click', () => mapInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => mapInstance.zoomOut());
+      document.getElementById('btnReset').addEventListener('click', () => mapInstance.setView(mapCenter, defaultZoom));
+
+      // ==================== 移动端适配 ====================
+      function showMobilePanel(html) {
+        document.getElementById('mobilePanelContent').innerHTML = html;
+        document.getElementById('mobileOverlay').style.display = 'block';
+        document.getElementById('mobilePanel').style.display = 'block';
+      }
+      function hideMobilePanel() {
+        document.getElementById('mobileOverlay').style.display = 'none';
+        document.getElementById('mobilePanel').style.display = 'none';
+      }
+      document.getElementById('mobileOverlay').addEventListener('click', hideMobilePanel);
+      document.getElementById('mobileBottom').addEventListener('click', e => {
+        const nav = e.target.closest('.nav-item');
+        if (!nav) return;
+        document.querySelectorAll('#mobileBottom .nav-item').forEach(n => n.classList.remove('active'));
+        nav.classList.add('active');
+        const key = nav.dataset.nav;
+        if (key === 'blog') { showMobilePanel(`<h3 style="margin-bottom:10px;">📰 攻略文章</h3>${document.getElementById('panelBlog').innerHTML}`); }
+        else if (key === 'map') { hideMobilePanel(); }
+        else if (key === 'tasks') { renderTasks(); showMobilePanel(`<h3 style="margin-bottom:10px;">📋 任务列表</h3>${document.getElementById('taskListContainer').innerHTML}`); }
+        else if (key === 'resources') { renderResources(); showMobilePanel(`<h3 style="margin-bottom:10px;">💎 资源查询</h3>${document.getElementById('resourceListContainer').innerHTML}`); }
+      });
+
+      // ==================== 启动 ====================
+      function init() {
+        loadStatus();
+        initMap();
+        renderBlogList();
+        renderTasks();
+        renderResources();
+        console.log('🌊 鸣潮攻略站已就绪 · 3.3版本 · 角色强度/配队/入坑攻略全部内置');
+      }
+      document.addEventListener('DOMContentLoaded', init);
+      window.addEventListener('resize', () => { if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 100); });
+    })();
+  </script>
 </body>
 </html>
