@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸣潮攻略站 - 交互式地图 | 任务列表 | 资源查询</title>
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    />
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #1c2333;
+            --bg-card: #1a1f2b;
+            --border: #252d3a;
+            --border-active: #4a5568;
+            --text-primary: #e6edf3;
+            --text-secondary: #a1b0c2;
+            --text-muted: #6b7d93;
+            --accent: #c9a84c;
+            --accent-glow: #e8c860;
+            --accent-dim: #8b6914;
+            --blue: #58a6ff;
+            --green: #3fb950;
+            --red: #f85149;
+            --purple: #a371f7;
+            --orange: #d2991d;
+            --cyan: #39d2c0;
+            --pink: #db61a2;
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+            --sidebar-width: 390px;
+            --topbar-height: 52px;
+            --bottombar-height: 64px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* === SCROLLBAR === */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-active);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* === APP SHELL === */
+        .app-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            flex-direction: row;
+        }
+
+        /* === TOP BAR (mobile) === */
+        .topbar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: var(--topbar-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            padding: 0 12px;
+            gap: 10px;
+        }
+        .topbar .logo-text {
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--accent-glow), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
+        }
+        .topbar .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .topbar .btn-icon:active {
+            background: var(--border-active);
+            transform: scale(0.94);
+        }
+        .topbar .search-mini {
+            flex: 1;
+            height: 36px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 0 14px;
+            font-size: 13px;
+            outline: none;
+            min-width: 0;
+            transition: var(--transition);
+        }
+        .topbar .search-mini:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+        }
+
+        /* === SIDEBAR (desktop) === */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            height: 100%;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 500;
+            transition: transform var(--transition);
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .sidebar-header .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--accent-glow), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2px;
+        }
+        .sidebar-header .subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .sidebar-search {
+            padding: 12px 16px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .sidebar-search input {
+            width: 100%;
+            height: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 0 40px 0 16px;
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .sidebar-search input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08);
+        }
+        .sidebar-search .search-icon {
+            position: absolute;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            font-size: 16px;
+        }
+
+        /* === TAB NAV === */
+        .tab-nav {
+            display: flex;
+            gap: 2px;
+            padding: 8px 14px;
+            flex-shrink: 0;
+            background: var(--bg-tertiary);
+            margin: 0 14px;
+            border-radius: var(--radius-md);
+        }
+        .tab-nav button {
+            flex: 1;
+            padding: 9px 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 7px;
+            font-size: 12.5px;
+            font-weight: 600;
+            transition: var(--transition);
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        .tab-nav button.active {
+            background: var(--bg-card);
+            color: var(--accent-glow);
+            box-shadow: var(--shadow-sm);
+        }
+        .tab-nav button:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* === PANEL CONTENT === */
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px 14px 16px;
+            scroll-behavior: smooth;
+        }
+        .panel-content.hidden {
+            display: none;
+        }
+
+        /* === FILTER SECTION === */
+        .filter-section {
+            margin-bottom: 10px;
+        }
+        .filter-section .section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin: 10px 0 6px;
+            padding-left: 2px;
+            font-weight: 600;
+        }
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .filter-chip {
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 11.5px;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-chip:hover {
+            border-color: var(--border-active);
+            color: var(--text-primary);
+        }
+        .filter-chip.active {
+            border-color: var(--accent);
+            background: rgba(201, 168, 76, 0.12);
+            color: var(--accent-glow);
+            box-shadow: 0 0 8px rgba(201, 168, 76, 0.15);
+        }
+        .filter-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* === LAYER TOGGLE === */
+        .layer-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            padding: 3px;
+        }
+        .layer-toggle button {
+            flex: 1;
+            padding: 7px 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 17px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .layer-toggle button.active {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+        }
+
+        /* === TASK CARD === */
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        .task-card:hover {
+            border-color: var(--border-active);
+            box-shadow: var(--shadow-sm);
+        }
+        .task-card .task-order {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #000;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(201, 168, 76, 0.4);
+        }
+        .task-card .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .task-card .task-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .task-card .task-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .task-card .task-reward {
+            font-size: 11px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .tag-main {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--red);
+        }
+        .tag-side {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--blue);
+        }
+        .tag-daily {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green);
+        }
+        .tag-event {
+            background: rgba(163, 113, 247, 0.2);
+            color: var(--purple);
+        }
+        .tag-must {
+            background: rgba(210, 153, 29, 0.2);
+            color: var(--orange);
+        }
+
+        /* === RESOURCE CARD === */
+        .resource-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .resource-card:hover {
+            border-color: var(--border-active);
+            box-shadow: var(--shadow-sm);
+        }
+        .resource-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .resource-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .resource-info .res-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        .resource-info .res-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* === MAP CONTAINER === */
+        .map-container {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+        }
+        .map-container #map {
+            width: 100%;
+            height: 100%;
+            background: #1a1d24;
+        }
+
+        /* === MAP OVERLAY BUTTONS === */
+        .map-overlay-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .map-ctrl-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+        }
+        .map-ctrl-btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+        .map-ctrl-btn.active-ctrl {
+            border-color: var(--accent);
+            background: rgba(201, 168, 76, 0.15);
+            color: var(--accent-glow);
+            box-shadow: 0 0 12px rgba(201, 168, 76, 0.25);
+        }
+
+        /* === EXPLORATION STATS === */
+        .exploration-stats {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 600;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 14px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            white-space: nowrap;
+        }
+        .exploration-stats .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .exploration-stats .stat-value {
+            color: var(--accent-glow);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* === DETAIL MODAL === */
+        .detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        .detail-sheet {
+            width: 100%;
+            max-width: 500px;
+            max-height: 75vh;
+            background: var(--bg-secondary);
+            border-radius: 20px 20px 0 0;
+            padding: 8px 18px 24px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            position: relative;
+        }
+        .detail-sheet .grabber {
+            width: 40px;
+            height: 4px;
+            background: var(--border-active);
+            border-radius: 2px;
+            margin: 0 auto 12px;
+        }
+        .detail-sheet .detail-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        .detail-sheet .detail-coords {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+        .detail-sheet .detail-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+        .detail-sheet .detail-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-fill {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 700;
+        }
+        .btn-fill:hover {
+            background: var(--accent-glow);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 11px;
+            border-radius: 14px;
+        }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .status-undiscovered {
+            background: rgba(107, 125, 147, 0.2);
+            color: var(--text-muted);
+        }
+        .status-marked {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--blue);
+        }
+        .status-collected {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green);
+        }
+
+        /* === MOBILE BOTTOM BAR === */
+        .mobile-bottom-bar {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: var(--bottombar-height);
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 8px;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+        .mobile-bottom-bar .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .mobile-bottom-bar .nav-item.active {
+            color: var(--accent-glow);
+        }
+        .mobile-bottom-bar .nav-item .nav-icon {
+            font-size: 20px;
+        }
+
+        /* === MOBILE PANEL OVERLAY === */
+        .mobile-panel-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1500;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .mobile-panel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1600;
+            max-height: 70vh;
+            background: var(--bg-secondary);
+            border-radius: 20px 20px 0 0;
+            overflow-y: auto;
+            padding: 8px 16px 24px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .mobile-panel .grabber {
+            width: 40px;
+            height: 4px;
+            background: var(--border-active);
+            border-radius: 2px;
+            margin: 0 auto 12px;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .topbar {
+                display: flex;
+            }
+            .mobile-bottom-bar {
+                display: flex;
+            }
+            .map-container {
+                padding-top: var(--topbar-height);
+                padding-bottom: var(--bottombar-height);
+            }
+            .map-overlay-controls {
+                top: calc(var(--topbar-height) + 10px);
+                right: 8px;
+            }
+            .exploration-stats {
+                bottom: calc(var(--bottombar-height) + 16px);
+                font-size: 10px;
+                padding: 6px 12px;
+                gap: 8px;
+            }
+            .mobile-panel-overlay.visible,
+            .mobile-panel.visible {
+                display: block;
+            }
+            .detail-sheet {
+                max-width: 100%;
+                border-radius: 20px 20px 0 0;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-panel-overlay,
+            .mobile-panel {
+                display: none !important;
+            }
+        }
+
+        /* === LEAFLET OVERRIDES === */
+        .leaflet-control-zoom {
+            display: none !important;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: var(--shadow-lg) !important;
+            font-family: var(--font-sans) !important;
+        }
+        .leaflet-popup-tip {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: var(--shadow-lg) !important;
+        }
+        .leaflet-popup-close-button {
+            color: var(--text-muted) !important;
+            font-size: 20px !important;
+            padding: 6px 8px !important;
+        }
+        .custom-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+        .marker-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        .marker-dot:hover {
+            transform: scale(1.35);
+            z-index: 999 !important;
+        }
+        .marker-dot.collected-mark {
+            opacity: 0.5;
+            filter: grayscale(40%);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .marker-dot .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            animation: pulse 1.8s infinite;
+            pointer-events: none;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+            }
+        }
+
+        /* === TOAST === */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            color: var(--accent-glow);
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease, toastOut 0.3s 2s ease forwards;
+            pointer-events: none;
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
+
+        /* === EMPTY STATE === */
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== TOP BAR (Mobile) ==================== -->
+    <div class="topbar" id="topbar">
+        <span class="logo-text">🌊 鸣潮攻略站</span>
+        <input type="text" class="search-mini" id="searchMini" placeholder="搜索地点、任务、资源...">
+        <button class="btn-icon" id="btnMobileFilter" title="筛选">🔍</button>
+    </div>
+
+    <!-- ==================== SIDEBAR (Desktop) ==================== -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">🌊 鸣潮攻略站</div>
+            <div class="subtitle">Wuthering Waves Guide</div>
+        </div>
+        <div class="sidebar-search">
+            <input type="text" id="searchDesktop" placeholder="搜索地点、任务、资源...">
+            <span class="search-icon">⌘</span>
+        </div>
+        <div class="tab-nav" id="tabNav">
+            <button data-tab="filter" class="active">🗺️ 地图筛选</button>
+            <button data-tab="tasks">📋 任务列表</button>
+            <button data-tab="resources">💎 资源查询</button>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="panel-content" id="panelFilter">
+            <div class="filter-section">
+                <div class="section-label">🌍 地图图层</div>
+                <div class="layer-toggle" id="layerToggle">
+                    <button data-layer="ground" class="active">🏞️ 地上</button>
+                    <button data-layer="underground">🕳️ 地下</button>
+                    <button data-layer="ruins">🏛️ 遗迹</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="section-label">📍 点位类型</div>
+                <div class="filter-chips" id="filterChips">
+                    <span class="filter-chip active" data-type="all">全部显示</span>
+                    <span class="filter-chip" data-type="teleport"><span class="dot" style="background:#58a6ff"></span>传送点</span>
+                    <span class="filter-chip" data-type="chest"><span class="dot" style="background:#e8c860"></span>宝箱</span>
+                    <span class="filter-chip" data-type="collectible"><span class="dot" style="background:#a371f7"></span>神瞳/收集</span>
+                    <span class="filter-chip" data-type="elite"><span class="dot" style="background:#f85149"></span>精英怪</span>
+                    <span class="filter-chip" data-type="resource"><span class="dot" style="background:#3fb950"></span>采集资源</span>
+                    <span class="filter-chip" data-type="npc"><span class="dot" style="background:#d2991d"></span>NPC/任务</span>
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="section-label">🏷️ 显示模式</div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-secondary);padding:4px 0;">
+                    <input type="checkbox" id="chkUncollectedOnly" style="accent-color:var(--accent);width:16px;height:16px;">
+                    仅显示未收集点位
+                </label>
+            </div>
+            <div class="filter-section" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">
+                <div class="section-label">📊 区域探索度</div>
+                <div style="font-size:12px;color:var(--text-secondary);" id="explorationDetail">
+                    加载中...
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Panel -->
+        <div class="panel-content hidden" id="panelTasks">
+            <div class="filter-chips" style="margin-bottom:10px;" id="taskFilterChips">
+                <span class="filter-chip active" data-task-filter="all">全部</span>
+                <span class="filter-chip" data-task-filter="main">主线</span>
+                <span class="filter-chip" data-task-filter="side">支线</span>
+                <span class="filter-chip" data-task-filter="daily">日常</span>
+            </div>
+            <div id="taskListContainer">
+                <div class="empty-state">加载任务中...</div>
+            </div>
+        </div>
+
+        <!-- Resources Panel -->
+        <div class="panel-content hidden" id="panelResources">
+            <div class="filter-chips" style="margin-bottom:10px;" id="resourceFilterChips">
+                <span class="filter-chip active" data-res-filter="all">全部</span>
+                <span class="filter-chip" data-res-filter="character">角色材料</span>
+                <span class="filter-chip" data-res-filter="weapon">武器材料</span>
+                <span class="filter-chip" data-res-filter="currency">货币</span>
+                <span class="filter-chip" data-res-filter="collectible">收集品</span>
+            </div>
+            <div id="resourceListContainer">
+                <div class="empty-state">加载资源中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAP AREA ==================== -->
+    <div class="map-container" id="mapContainer">
+        <div id="map"></div>
+        <div class="map-overlay-controls">
+            <button class="map-ctrl-btn" id="btnZoomIn" title="放大">＋</button>
+            <button class="map-ctrl-btn" id="btnZoomOut" title="缩小">－</button>
+            <button class="map-ctrl-btn" id="btnLocate" title="定位当前位置">📍</button>
+            <button class="map-ctrl-btn" id="btnResetView" title="重置视图">🏠</button>
+        </div>
+        <div class="exploration-stats" id="explorationStats">
+            <div class="stat-item">🗺️ 总点位 <span class="stat-value" id="statTotal">0</span></div>
+            <div class="stat-item">✅ 已收集 <span class="stat-value" id="statCollected">0</span></div>
+            <div class="stat-item">📊 探索度 <span class="stat-value" id="statPercent">0%</span></div>
+        </div>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM BAR ==================== -->
+    <div class="mobile-bottom-bar" id="mobileBottomBar">
+        <div class="nav-item active" data-mobile-nav="map">
+            <span class="nav-icon">🗺️</span>地图
+        </div>
+        <div class="nav-item" data-mobile-nav="filter">
+            <span class="nav-icon">🔍</span>筛选
+        </div>
+        <div class="nav-item" data-mobile-nav="tasks">
+            <span class="nav-icon">📋</span>任务
+        </div>
+        <div class="nav-item" data-mobile-nav="resources">
+            <span class="nav-icon">💎</span>资源
+        </div>
+    </div>
+
+    <!-- ==================== MOBILE PANEL ==================== -->
+    <div class="mobile-panel-overlay" id="mobilePanelOverlay"></div>
+    <div class="mobile-panel" id="mobilePanel">
+        <div class="grabber"></div>
+        <div id="mobilePanelContent"></div>
+    </div>
+
+    <!-- ==================== DETAIL MODAL ==================== -->
+    <div class="detail-overlay" id="detailOverlay" style="display:none;">
+        <div class="detail-sheet" id="detailSheet">
+            <div class="grabber"></div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST ==================== -->
+    <div class="toast" id="toast" style="display:none;"></div>
+
+    <script>
+        (function() {
+            // 模拟游戏点位数据
+            const mapCenter = [22.5, 114.0]; // 深圳附近作为演示区域
+            const defaultZoom = 13;
+
+            const pointTypes = {
+                teleport: { label: '传送点', icon: '🌀', color: '#58a6ff', bg: 'rgba(88,166,255,0.25)' },
+                chest: { label: '宝箱', icon: '🎁', color: '#e8c860', bg: 'rgba(232,200,96,0.25)' },
+                collectible: { label: '神瞳/收集', icon: '✨', color: '#a371f7', bg: 'rgba(163,113,247,0.25)' },
+                elite: { label: '精英怪', icon: '👾', color: '#f85149', bg: 'rgba(248,81,73,0.25)' },
+                resource: { label: '采集资源', icon: '🌿', color: '#3fb950', bg: 'rgba(63,185,80,0.25)' },
+                npc: { label: 'NPC/任务', icon: '❕', color: '#d2991d', bg: 'rgba(210,153,29,0.25)' },
+            };
+
+            // 生成模拟点位
+            const allPoints = [];
+            const areas = [
+                { name: '夜归城', center: [22.54, 114.05], radius: 0.04 },
+                { name: '七丘', center: [22.48, 113.97], radius: 0.035 },
+                { name: '荒石高地', center: [22.52, 114.10], radius: 0.03 },
+                { name: '沉星海', center: [22.46, 114.03], radius: 0.038 },
+            ];
+            const typeKeys = Object.keys(pointTypes);
+            let pointIdCounter = 0;
+
+            // 在每个区域散布点位
+            areas.forEach(area => {
+                const count = 12 + Math.floor(Math.random() * 10);
+                for (let i = 0; i < count; i++) {
+                    const typeKey = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = Math.random() * area.radius;
+                    const lat = area.center[0] + Math.cos(angle) * dist * 0.7;
+                    const lng = area.center[1] + Math.sin(angle) * dist;
+                    allPoints.push({
+                        id: `point_${pointIdCounter++}`,
+                        type: typeKey,
+                        name: `${pointTypes[typeKey].label}·${area.name}${i+1}`,
+                        lat,
+                        lng,
+                        area: area.name,
+                        layer: ['ground', 'underground', 'ruins'][Math.floor(Math.random() * 3)],
+                        description: `位于${area.name}地区的${pointTypes[typeKey].label}，周围有${['少量','一些','大量'][Math.floor(Math.random()*3)]}敌人巡逻。`,
+                        rewards: typeKey === 'chest' ? ['星声×5', '贝币×2000'] : (typeKey === 'elite' ? ['角色经验×100',
+                            '掉落材料×2'
+                        ] : []),
+                    });
+                }
+            });
+
+            // 添加一些明确的重要点位
+            const importantPoints = [
+                { name: '夜归城·中央锚点', type: 'teleport', lat: 22.54, lng: 114.05, area: '夜归城', layer: 'ground',
+                    desc: '夜归城的主要传送锚点，连接周边四个区域。', rewards: [] },
+                { name: '七丘·秘境入口', type: 'teleport', lat: 22.48, lng: 113.97, area: '七丘', layer: 'ground',
+                    desc: '七丘秘境入口，每周可挑战一次。', rewards: ['星声×50'] },
+                { name: '荒石高地·华丽宝箱', type: 'chest', lat: 22.525, lng: 114.105, area: '荒石高地', layer: 'ground',
+                    desc: '隐藏在巨石后的华丽宝箱，需要击败守军。', rewards: ['星声×20', '异构金属×1', '贝币×10000'] },
+                { name: '沉星海·风神瞳', type: 'collectible', lat: 22.455, lng: 114.035, area: '沉星海', layer: 'ruins',
+                    desc: '位于沉星海遗迹顶部，需要攀爬到达。', rewards: ['神瞳×1', '冒险阅历×50'] },
+                { name: '夜归城·异化浮灵', type: 'elite', lat: 22.535, lng: 114.055, area: '夜归城', layer: 'underground',
+                    desc: '地下洞穴中的精英怪物，掉落稀有材料。', rewards: ['风蚀核心×1', '贝币×3000'] },
+                { name: '七丘·星声矿脉', type: 'resource', lat: 22.485, lng: 113.965, area: '七丘', layer: 'ground',
+                    desc: '富集的星声矿脉，可采集3-5次。', rewards: ['星声×10/次'] },
+            ];
+            importantPoints.forEach(p => {
+                allPoints.push({
+                    id: `point_imp_${pointIdCounter++}`,
+                    type: p.type,
+                    name: p.name,
+                    lat: p.lat,
+                    lng: p.lng,
+                    area: p.area,
+                    layer: p.layer,
+                    description: p.desc,
+                    rewards: p.rewards,
+                    isImportant: true,
+                });
+            });
+
+            // 任务数据
+            const tasksData = [
+                { id: 'q1', name: '漂泊之始', type: 'main', order: 1, area: '夜归城', npc: '秋', rewards: '冒险阅历×200, 共鸣石×5',
+                    desc: '与秋对话，击败3只游离浮灵，返回汇报。', coords: [22.54, 114.05], tags: ['must'] },
+                { id: 'q2', name: '解锁飞行', type: 'main', order: 2, area: '夜归城', npc: '风之使者', rewards: '飞行能力, 星声×10',
+                    desc: '前往风之使者处完成飞行试炼。', coords: [22.538, 114.048], tags: ['must'] },
+                { id: 'q3', name: '七丘的呼唤', type: 'main', order: 3, area: '七丘', npc: '旅人', rewards: '冒险阅历×300, 贝币×5000',
+                    desc: '前往七丘地区，调查异常的能量波动。', coords: [22.48, 113.97], tags: [] },
+                { id: 'q4', name: '遗失的笔记', type: 'side', order: 10, area: '夜归城', npc: '学者艾琳', rewards: '贝币×2000, 食谱×1',
+                    desc: '帮助学者找回散落的3页笔记。', coords: [22.542, 114.052], tags: [] },
+                { id: 'q5', name: '荒石试炼', type: 'side', order: 11, area: '荒石高地', npc: '试炼官', rewards: '武器突破材料×3',
+                    desc: '完成荒石高地的战斗试炼。', coords: [22.52, 114.10], tags: [] },
+                { id: 'q6', name: '每日·清剿浮灵', type: 'daily', order: 99, area: '任意', npc: '冒险协会', rewards: '阅历×100, 贝币×1500',
+                    desc: '击败10只任意类型的浮灵。', coords: null, tags: [] },
+                { id: 'q7', name: '每日·矿石采集', type: 'daily', order: 100, area: '任意', npc: '冒险协会', rewards: '阅历×80, 矿石×5',
+                    desc: '采集5块矿石资源。', coords: null, tags: [] },
+                { id: 'q8', name: '沉星海的秘密', type: 'main', order: 4, area: '沉星海', npc: '考古学家', rewards: '冒险阅历×400, 异构金属×2',
+                    desc: '深入沉星海遗迹，揭开古老的秘密。', coords: [22.46, 114.03], tags: ['must'] },
+            ];
+
+            // 资源数据
+            const resourcesData = [
+                { id: 'r1', name: '异构金属', category: 'character', icon: '🔩', desc: '角色突破核心材料', usage: '用于5星角色突破',
+                    area: '荒石高地', density: '高', coords: [22.525, 114.105] },
+                { id: 'r2', name: '风蚀核心', category: 'character', icon: '💨', desc: '风属性角色突破材料', usage: '风属性角色专用',
+                    area: '七丘', density: '中', coords: [22.48, 113.97] },
+                { id: 'r3', name: '星声', category: 'currency', icon: '⭐', desc: '高级货币', usage: '用于抽卡和商店兑换', area: '全区域',
+                    density: '低', coords: [22.54, 114.05] },
+                { id: 'r4', name: '贝币', category: 'currency', icon: '🪙', desc: '通用货币', usage: '用于日常消费', area: '全区域',
+                    density: '高', coords: [22.54, 114.05] },
+                { id: 'r5', name: '共鸣石', category: 'weapon', icon: '💎', desc: '武器锻造材料', usage: '用于武器突破与精炼', area: '沉星海',
+                    density: '中', coords: [22.46, 114.03] },
+                { id: 'r6', name: '食谱·潮涌汤', category: 'collectible', icon: '🍲', desc: '稀有食谱', usage: '烹饪后获得攻击力加成',
+                    area: '夜归城', density: '稀有', coords: [22.54, 114.05] },
+            ];
+
+            // ==================== STATE ====================
+            let activeLayer = 'ground';
+            let activeTypeFilter = 'all';
+            let showUncollectedOnly = false;
+            let markerStatusMap = {}; // { pointId: 'undiscovered' | 'marked' | 'collected' }
+            let activeTab = 'filter';
+            let currentDetailPoint = null;
+            let mapInstance = null;
+            let markerLayerGroup = null;
+            let allMarkers = []; // { pointId, marker, pointData }
+
+            // 从localStorage加载标记状态
+            function loadMarkerStatus() {
+                try {
+                    const saved = localStorage.getItem('ww_guide_marker_status');
+                    if (saved) markerStatusMap = JSON.parse(saved);
+                } catch (e) {
+                    markerStatusMap = {};
+                }
+            }
+
+            function saveMarkerStatus() {
+                try {
+                    localStorage.setItem('ww_guide_marker_status', JSON.stringify(markerStatusMap));
+                } catch (e) {}
+            }
+
+            function getMarkerStatus(pointId) {
+                return markerStatusMap[pointId] || 'undiscovered';
+            }
+
+            function setMarkerStatus(pointId, status) {
+                markerStatusMap[pointId] = status;
+                saveMarkerStatus();
+                updateAllMarkerAppearances();
+                updateStats();
+                updateExplorationDetail();
+            }
+
+            // ==================== MAP INIT ====================
+            function initMap() {
+                mapInstance = L.map('map', {
+                    center: mapCenter,
+                    zoom: defaultZoom,
+                    zoomControl: false,
+                    attributionControl: false,
+                    maxZoom: 18,
+                    minZoom: 10,
+                });
+
+                // 使用CartoDB暗色瓦片
+                L.tileLayer(
+                    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 18,
+                        subdomains: 'abcd',
+                    }
+                ).addTo(mapInstance);
+
+                markerLayerGroup = L.layerGroup().addTo(mapInstance);
+
+                // 渲染所有点位
+                renderAllMarkers();
+
+                updateStats();
+                updateExplorationDetail();
+            }
+
+            function createMarkerIcon(pointData, status) {
+                const typeInfo = pointTypes[pointData.type] || pointTypes['resource'];
+                const isCollected = status === 'collected';
+                const size = pointData.isImportant ? 32 : 26;
+                const fontSize = pointData.isImportant ? 17 : 14;
+                const opacity = isCollected ? '0.55' : '1';
+                const filter = isCollected ? 'grayscale(35%)' : 'none';
+                const borderColor = isCollected ? 'rgba(180,180,180,0.4)' : typeInfo.color;
+
+                const html = `
+                <div class="marker-dot ${isCollected ? 'collected-mark' : ''}" 
+                     style="
+                        width:${size}px;height:${size}px;
+                        background:${typeInfo.bg};
+                        border-color:${borderColor};
+                        font-size:${fontSize}px;
+                        opacity:${opacity};
+                        filter:${filter};
+                     ">
+                    ${typeInfo.icon}
+                    ${!isCollected && pointData.isImportant ? '<span class="pulse-ring" style="color:'+typeInfo.color+';"></span>' : ''}
+                </div>
+                `;
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: html,
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2],
+                    popupAnchor: [0, -size / 2],
+                });
+            }
+
+            function renderAllMarkers() {
+                if (!markerLayerGroup) return;
+                markerLayerGroup.clearLayers();
+                allMarkers = [];
+
+                allPoints.forEach(pointData => {
+                    const status = getMarkerStatus(pointData.id);
+                    // 图层过滤
+                    if (activeLayer !== 'all' && pointData.layer !== activeLayer) return;
+                    // 类型过滤
+                    if (activeTypeFilter !== 'all' && pointData.type !== activeTypeFilter) return;
+                    // 未收集过滤
+                    if (showUncollectedOnly && status === 'collected') return;
+
+                    const icon = createMarkerIcon(pointData, status);
+                    const marker = L.marker([pointData.lat, pointData.lng], { icon })
+                        .addTo(markerLayerGroup);
+
+                    marker.on('click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        openDetailModal(pointData);
+                    });
+
+                    allMarkers.push({ pointId: pointData.id, marker, pointData });
+                });
+            }
+
+            function updateAllMarkerAppearances() {
+                // 重新渲染所有标记以反映状态变化
+                renderAllMarkers();
+            }
+
+            function updateStats() {
+                const total = allPoints.length;
+                let collected = 0;
+                allPoints.forEach(p => {
+                    if (getMarkerStatus(p.id) === 'collected') collected++;
+                });
+                const percent = total > 0 ? Math.round((collected / total) * 100) : 0;
+                document.getElementById('statTotal').textContent = total;
+                document.getElementById('statCollected').textContent = collected;
+                document.getElementById('statPercent').textContent = percent + '%';
+            }
+
+            function updateExplorationDetail() {
+                const container = document.getElementById('explorationDetail');
+                if (!container) return;
+                let html = '';
+                areas.forEach(area => {
+                    const areaPoints = allPoints.filter(p => p.area === area.name);
+                    const total = areaPoints.length;
+                    let collected = 0;
+                    areaPoints.forEach(p => {
+                        if (getMarkerStatus(p.id) === 'collected') collected++;
+                    });
+                    const pct = total > 0 ? Math.round((collected / total) * 100) : 0;
+                    html +=
+                        `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;"><span>${area.name}</span><span style="color:var(--accent-glow);font-weight:600;">${pct}% (${collected}/${total})</span></div>`;
+                });
+                container.innerHTML = html || '<span style="font-size:11px;color:var(--text-muted);">暂无数据</span>';
+            }
+
+            // ==================== DETAIL MODAL ====================
+            function openDetailModal(pointData) {
+                currentDetailPoint = pointData;
+                const status = getMarkerStatus(pointData.id);
+                const typeInfo = pointTypes[pointData.type] || pointTypes['resource'];
+                const statusLabels = { undiscovered: '未发现', marked: '已标记', collected: '已收集' };
+                const statusClasses = { undiscovered: 'status-undiscovered', marked: 'status-marked',
+                    collected: 'status-collected' };
+
+                let rewardsHtml = '';
+                if (pointData.rewards && pointData.rewards.length > 0) {
+                    rewardsHtml = `
+                    <div style="margin-top:8px;font-size:12px;color:var(--accent);">
+                        🎁 奖励：${pointData.rewards.join('、')}
+                    </div>`;
+                }
+
+                document.getElementById('detailContent').innerHTML = `
+                <div class="detail-title">${typeInfo.icon} ${pointData.name}</div>
+                <div class="detail-coords">📍 坐标 (${pointData.lat.toFixed(4)}, ${pointData.lng.toFixed(4)}) | 🏷️ ${typeInfo.label} | 🗺️ ${pointData.area} | 📐 图层：${pointData.layer === 'ground' ? '地上' : pointData.layer === 'underground' ? '地下' : '遗迹'}</div>
+                <div class="detail-desc">${pointData.description || '暂无详细描述。'}</div>
+                ${rewardsHtml}
+                <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:11px;color:var(--text-muted);">状态：</span>
+                    <span class="status-indicator ${statusClasses[status]}" id="detailStatusLabel">${statusLabels[status]}</span>
+                </div>
+                <div class="detail-actions" style="margin-top:14px;">
+                    <button class="btn btn-outline btn-sm" onclick="window._guideAction('undiscovered')">🔵 未发现</button>
+                    <button class="btn btn-outline btn-sm" onclick="window._guideAction('marked')">📌 已标记</button>
+                    <button class="btn btn-fill btn-sm" onclick="window._guideAction('collected')">✅ 已收集</button>
+                    <button class="btn btn-outline btn-sm" onclick="window._guideCopyCoords()">📋 复制坐标</button>
+                </div>
+                <button class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;" onclick="window._guideCloseDetail()">关闭</button>
+                `;
+
+                document.getElementById('detailOverlay').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDetailModal() {
+                document.getElementById('detailOverlay').style.display = 'none';
+                document.body.style.overflow = '';
+                currentDetailPoint = null;
+            }
+
+            // 暴露到全局
+            window._guideAction = function(status) {
+                if (!currentDetailPoint) return;
+                setMarkerStatus(currentDetailPoint.id, status);
+                const statusLabels = { undiscovered: '未发现', marked: '已标记', collected: '已收集' };
+                const statusClasses = { undiscovered: 'status-undiscovered', marked: 'status-marked',
+                    collected: 'status-collected' };
+                const labelEl = document.getElementById('detailStatusLabel');
+                if (labelEl) {
+                    labelEl.textContent = statusLabels[status];
+                    labelEl.className = 'status-indicator ' + statusClasses[status];
+                }
+                showToast(`✅ 已更新为：${statusLabels[status]}`);
+                updateStats();
+                updateExplorationDetail();
+            };
+            window._guideCopyCoords = function() {
+                if (!currentDetailPoint) return;
+                const text = `(${currentDetailPoint.lat.toFixed(4)}, ${currentDetailPoint.lng.toFixed(4)})`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 坐标已复制：' + text);
+                }).catch(() => {
+                    showToast('⚠️ 复制失败，请手动复制');
+                });
+            };
+            window._guideCloseDetail = closeDetailModal;
+
+            // 点击overlay关闭
+            document.getElementById('detailOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeDetailModal();
+            });
+
+            // ==================== TOAST ====================
+            let toastTimer;
+
+            function showToast(msg) {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.style.display = 'block';
+                toast.style.animation = 'none';
+                toast.offsetHeight;
+                toast.style.animation = 'toastIn 0.3s ease, toastOut 0.3s 1.8s ease forwards';
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2200);
+            }
+
+            // ==================== SIDEBAR TABS ====================
+            document.getElementById('tabNav').addEventListener('click', function(e) {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const tab = btn.dataset.tab;
+                if (!tab) return;
+
+                // 更新tab按钮状态
+                document.querySelectorAll('#tabNav button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeTab = tab;
+
+                // 切换面板
+                document.getElementById('panelFilter').classList.toggle('hidden', tab !== 'filter');
+                document.getElementById('panelTasks').classList.toggle('hidden', tab !== 'tasks');
+                document.getElementById('panelResources').classList.toggle('hidden', tab !== 'resources');
+
+                if (tab === 'tasks') renderTaskList();
+                if (tab === 'resources') renderResourceList();
+            });
+
+            // ==================== FILTER LOGIC ====================
+            document.getElementById('layerToggle').addEventListener('click', function(e) {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                document.querySelectorAll('#layerToggle button').forEach(b => b.classList.remove(
+                    'active'));
+                btn.classList.add('active');
+                activeLayer = btn.dataset.layer;
+                renderAllMarkers();
+                updateStats();
+            });
+
+            document.getElementById('filterChips').addEventListener('click', function(e) {
+                const chip = e.target.closest('.filter-chip');
+                if (!chip) return;
+                document.querySelectorAll('#filterChips .filter-chip').forEach(c => c.classList.remove(
+                    'active'));
+                chip.classList.add('active');
+                activeTypeFilter = chip.dataset.type;
+                renderAllMarkers();
+                updateStats();
+            });
+
+            document.getElementById('chkUncollectedOnly').addEventListener('change', function() {
+                showUncollectedOnly = this.checked;
+                renderAllMarkers();
+                updateStats();
+            });
+
+            // ==================== TASK LIST RENDERING ====================
+            let taskFilterActive = 'all';
+
+            function renderTaskList() {
+                const container = document.getElementById('taskListContainer');
+                let filtered = tasksData;
+                if (taskFilterActive !== 'all') {
+                    filtered = tasksData.filter(t => t.type === taskFilterActive);
+                }
+                // 按order排序
+                filtered.sort((a, b) => a.order - b.order);
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state">没有匹配的任务</div>';
+                    return;
+                }
+                container.innerHTML = filtered.map(t => {
+                    const tagHtml = t.tags.includes('must') ?
+                        '<span class="tag tag-must">必做</span>' : '';
+                    const typeTagClass = { main: 'tag-main', side: 'tag-side', daily: 'tag-daily',
+                        event: 'tag-event' };
+                    const typeLabel = { main: '主线', side: '支线', daily: '日常', event: '活动' };
+                    return `
+                    <div class="task-card" data-task-id="${t.id}" onclick="window._guideFocusPoint(${t.coords ? t.coords[0] : mapCenter[0]}, ${t.coords ? t.coords[1] : mapCenter[1]}, '${t.name}')">
+                        ${t.order < 20 ? `<div class="task-order">${t.order}</div>` : ''}
+                        <div class="task-header">
+                            <span class="task-name">${t.name}</span>
+                            <span class="tag ${typeTagClass[t.type] || 'tag-side'}">${typeLabel[t.type] || t.type}</span>
+                        </div>
+                        <div class="task-meta">
+                            <span>📍 ${t.area}</span>
+                            <span>👤 ${t.npc}</span>
+                            ${tagHtml}
+                        </div>
+                        <div class="task-reward">🎁 ${t.rewards}</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${t.desc}</div>
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('taskFilterChips').addEventListener('click', function(e) {
+                const chip = e.target.closest('.filter-chip');
+                if (!chip) return;
+                document.querySelectorAll('#taskFilterChips .filter-chip').forEach(c => c.classList.remove(
+                    'active'));
+                chip.classList.add('active');
+                taskFilterActive = chip.dataset.taskFilter;
+                renderTaskList();
+            });
+
+            // ==================== RESOURCE LIST RENDERING ====================
+            let resourceFilterActive = 'all';
+
+            function renderResourceList() {
+                const container = document.getElementById('resourceListContainer');
+                let filtered = resourcesData;
+                if (resourceFilterActive !== 'all') {
+                    filtered = resourcesData.filter(r => r.category === resourceFilterActive);
+                }
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state">没有匹配的资源</div>';
+                    return;
+                }
+                const catColors = { character: 'rgba(248,81,73,0.2)', weapon: 'rgba(88,166,255,0.2)',
+                    currency: 'rgba(232,200,96,0.2)', collectible: 'rgba(163,113,247,0.2)' };
+                container.innerHTML = filtered.map(r => `
+                    <div class="resource-card" onclick="window._guideFocusPoint(${r.coords[0]}, ${r.coords[1]}, '${r.name}')">
+                        <div class="resource-icon" style="background:${catColors[r.category] || 'rgba(255,255,255,0.1)'};">${r.icon}</div>
+                        <div class="resource-info">
+                            <div class="res-name">${r.name}</div>
+                            <div class="res-desc">${r.desc} · 密度：${r.density} · ${r.area}</div>
+                        </div>
+                        <span style="font-size:11px;color:var(--accent);">查看分布→</span>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('resourceFilterChips').addEventListener('click', function(e) {
+                const chip = e.target.closest('.filter-chip');
+                if (!chip) return;
+                document.querySelectorAll('#resourceFilterChips .filter-chip').forEach(c => c.classList.remove(
+                    'active'));
+                chip.classList.add('active');
+                resourceFilterActive = chip.dataset.resFilter;
+                renderResourceList();
+            });
+
+            // ==================== SEARCH ====================
+            function performSearch(query) {
+                if (!query || query.trim().length < 1) return;
+                const q = query.trim().toLowerCase();
+                // 搜索点位
+                const foundPoint = allPoints.find(p =>
+                    p.name.toLowerCase().includes(q) ||
+                    p.area.toLowerCase().includes(q) ||
+                    (pointTypes[p.type] && pointTypes[p.type].label.toLowerCase().includes(q))
+                );
+                if (foundPoint) {
+                    focusOnPoint(foundPoint);
+                    showToast(`📍 已定位：${foundPoint.name}`);
+                    return;
+                }
+                // 搜索任务
+                const foundTask = tasksData.find(t => t.name.toLowerCase().includes(q));
+                if (foundTask && foundTask.coords) {
+                    focusOnCoords(foundTask.coords[0], foundTask.coords[1], foundTask.name);
+                    showToast(`📋 已定位任务：${foundTask.name}`);
+                    return;
+                }
+                // 搜索资源
+                const foundRes = resourcesData.find(r => r.name.toLowerCase().includes(q));
+                if (foundRes) {
+                    focusOnCoords(foundRes.coords[0], foundRes.coords[1], foundRes.name);
+                    showToast(`💎 已定位资源：${foundRes.name}`);
+                    return;
+                }
+                showToast('⚠️ 未找到匹配结果');
+            }
+
+            function focusOnPoint(pointData) {
+                if (!mapInstance) return;
+                mapInstance.setView([pointData.lat, pointData.lng], 16, { animate: true, duration: 0.6 });
+                setTimeout(() => {
+                    openDetailModal(pointData);
+                }, 400);
+            }
+
+            function focusOnCoords(lat, lng, name) {
+                if (!mapInstance) return;
+                mapInstance.setView([lat, lng], 16, { animate: true, duration: 0.6 });
+                // 尝试找到该位置的点位
+                const nearby = allPoints.find(p => Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005);
+                if (nearby) {
+                    setTimeout(() => openDetailModal(nearby), 400);
+                }
+            }
+
+            window._guideFocusPoint = focusOnCoords;
+
+            document.getElementById('searchDesktop').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch(this.value);
+                    this.value = '';
+                }
+            });
+            document.getElementById('searchMini').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch(this.value);
+                    this.value = '';
+                }
+            });
+
+            // ==================== MAP CONTROLS ====================
+            document.getElementById('btnZoomIn').addEventListener('click', () => {
+                if (mapInstance) mapInstance.zoomIn();
+            });
+            document.getElementById('btnZoomOut').addEventListener('click', () => {
+                if (mapInstance) mapInstance.zoomOut();
+            });
+            document.getElementById('btnLocate').addEventListener('click', () => {
+                if (mapInstance) mapInstance.setView(mapCenter, defaultZoom, { animate: true,
+                duration: 0.5 });
+                showToast('📍 已回到默认视图');
+            });
+            document.getElementById('btnResetView').addEventListener('click', () => {
+                if (mapInstance) mapInstance.setView(mapCenter, defaultZoom, { animate: true,
+                duration: 0.5 });
+                activeLayer = 'ground';
+                activeTypeFilter = 'all';
+                showUncollectedOnly = false;
+                document.querySelectorAll('#layerToggle button').forEach(b => b.classList.remove('active'));
+                document.querySelector('#layerToggle button[data-layer="ground"]')?.classList.add('active');
+                document.querySelectorAll('#filterChips .filter-chip').forEach(c => c.classList.remove('active'));
+                document.querySelector('#filterChips .filter-chip[data-type="all"]')?.classList.add('active');
+                document.getElementById('chkUncollectedOnly').checked = false;
+                renderAllMarkers();
+                updateStats();
+                updateExplorationDetail();
+                showToast('🔄 视图已重置');
+            });
+
+            // ==================== MOBILE PANEL ====================
+            function openMobilePanel(contentHtml) {
+                document.getElementById('mobilePanelContent').innerHTML = contentHtml;
+                document.getElementById('mobilePanelOverlay').classList.add('visible');
+                document.getElementById('mobilePanel').classList.add('visible');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMobilePanel() {
+                document.getElementById('mobilePanelOverlay').classList.remove('visible');
+                document.getElementById('mobilePanel').classList.remove('visible');
+                document.body.style.overflow = '';
+            }
+
+            document.getElementById('mobilePanelOverlay').addEventListener('click', closeMobilePanel);
+
+            document.getElementById('btnMobileFilter').addEventListener('click', function() {
+                const filterHTML = document.getElementById('panelFilter').innerHTML;
+                openMobilePanel('<div style="font-weight:700;margin-bottom:10px;">🔍 地图筛选</div>' +
+                    filterHTML);
+                // 重新绑定移动端面板中的事件
+                setTimeout(bindMobilePanelEvents, 100);
+            });
+
+            document.getElementById('mobileBottomBar').addEventListener('click', function(e) {
+                const navItem = e.target.closest('.nav-item');
+                if (!navItem) return;
+                const nav = navItem.dataset.mobileNav;
+                document.querySelectorAll('#mobileBottomBar .nav-item').forEach(n => n.classList.remove(
+                    'active'));
+                navItem.classList.add('active');
+
+                if (nav === 'map') {
+                    closeMobilePanel();
+                } else if (nav === 'filter') {
+                    const filterHTML = document.getElementById('panelFilter').innerHTML;
+                    openMobilePanel('<div style="font-weight:700;margin-bottom:10px;">🔍 地图筛选</div>' +
+                        filterHTML);
+                    setTimeout(bindMobilePanelEvents, 100);
+                } else if (nav === 'tasks') {
+                    renderTaskList();
+                    const tasksHTML = '<div style="font-weight:700;margin-bottom:10px;">📋 任务列表</div>' +
+                        document.getElementById('taskListContainer').innerHTML;
+                    openMobilePanel(tasksHTML);
+                } else if (nav === 'resources') {
+                    renderResourceList();
+                    const resHTML = '<div style="font-weight:700;margin-bottom:10px;">💎 资源查询</div>' +
+                        document.getElementById('resourceListContainer').innerHTML;
+                    openMobilePanel(resHTML);
+                }
+            });
+
+            function bindMobilePanelEvents() {
+                // 重新绑定layer toggle
+                const layerToggle = document.getElementById('mobilePanel')?.querySelector('.layer-toggle');
+                if (layerToggle) {
+                    layerToggle.addEventListener('click', function(e) {
+                        const btn = e.target.closest('button');
+                        if (!btn) return;
+                        layerToggle.querySelectorAll('button').forEach(b => b.classList.remove(
+                            'active'));
+                        btn.classList.add('active');
+                        activeLayer = btn.dataset.layer;
+                        renderAllMarkers();
+                        updateStats();
+                        // 同步桌面端
+                        document.querySelectorAll('#layerToggle button').forEach(b => b.classList
+                            .remove('active'));
+                        document.querySelector(`#layerToggle button[data-layer="${activeLayer}"]`)
+                            ?.classList.add('active');
+                    });
+                }
+                // 重新绑定filter chips
+                const filterChips = document.getElementById('mobilePanel')?.querySelector('.filter-chips');
+                if (filterChips && filterChips.id !== 'taskFilterChips' && filterChips.id !== 'resourceFilterChips') {
+                    filterChips.addEventListener('click', function(e) {
+                        const chip = e.target.closest('.filter-chip');
+                        if (!chip || !chip.dataset.type) return;
+                        filterChips.querySelectorAll('.filter-chip').forEach(c => c.classList.remove(
+                            'active'));
+                        chip.classList.add('active');
+                        activeTypeFilter = chip.dataset.type;
+                        renderAllMarkers();
+                        updateStats();
+                        // 同步桌面端
+                        document.querySelectorAll('#filterChips .filter-chip').forEach(c => c.classList
+                            .remove('active'));
+                        document.querySelector(
+                            `#filterChips .filter-chip[data-type="${activeTypeFilter}"]`)?.classList
+                            .add('active');
+                    });
+                }
+                // 重新绑定uncollected checkbox
+                const chk = document.getElementById('mobilePanel')?.querySelector('input[type="checkbox"]');
+                if (chk) {
+                    chk.addEventListener('change', function() {
+                        showUncollectedOnly = this.checked;
+                        renderAllMarkers();
+                        updateStats();
+                        document.getElementById('chkUncollectedOnly').checked = this.checked;
+                    });
+                }
+            }
+
+            // ==================== INIT ====================
+            function init() {
+                loadMarkerStatus();
+                initMap();
+                renderTaskList();
+                renderResourceList();
+                updateStats();
+                updateExplorationDetail();
+
+                // 键盘快捷键
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeDetailModal();
+                        closeMobilePanel();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        document.getElementById('searchDesktop').focus();
+                    }
+                });
+
+                console.log('🌊 鸣潮攻略站已就绪 | 点位总数：' + allPoints.length + ' | 区域：' + areas.map(a => a.name)
+                    .join('、'));
+                console.log('💡 提示：点击地图标记查看详情 | Ctrl+K 搜索 | Esc 关闭弹窗');
+            }
+
+            // 启动
+            document.addEventListener('DOMContentLoaded', init);
+
+            // 窗口大小改变时更新地图
+            window.addEventListener('resize', function() {
+                if (mapInstance) {
+                    setTimeout(() => mapInstance.invalidateSize(), 100);
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
